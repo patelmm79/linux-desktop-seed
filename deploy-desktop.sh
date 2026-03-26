@@ -335,6 +335,52 @@ EOF
     log_info "Claude Code OpenRouter configuration complete"
 }
 
+# Install OpenRouter CLI
+install_openrouter() {
+    log_info "Installing OpenRouter CLI..."
+
+    # Check if already installed
+    if command -v openrouter &> /dev/null; then
+        log_warn "OpenRouter CLI already installed"
+        return 0
+    fi
+
+    # Install Node.js if not present
+    if ! command -v node &> /dev/null; then
+        log_info "Installing Node.js..."
+
+        # Add NodeSource repository
+        curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+
+        if ! apt-get install -y nodejs; then
+            log_error "Failed to install Node.js"
+            return 1
+        fi
+    fi
+
+    # Install OpenRouter CLI
+    if ! npm install -g openrouter; then
+        log_error "Failed to install OpenRouter CLI"
+        return 1
+    fi
+
+    # Verify installation
+    if ! command -v openrouter &> /dev/null; then
+        log_error "OpenRouter CLI installation failed"
+        return 1
+    fi
+
+    # Configure default model to minimax2.5
+    mkdir -p ~/.config/openrouter
+    cat > ~/.config/openrouter/config.json << 'EOF'
+{
+  "default_model": "minimax2.5"
+}
+EOF
+
+    log_info "OpenRouter CLI installed with default model: minimax2.5"
+}
+
 # Main function
 main() {
     log_info "Starting Remote Desktop Deployment v$SCRIPT_VERSION"
@@ -348,6 +394,7 @@ main() {
     install_vscode
     install_claude_code
     configure_claude_openrouter
+    install_openrouter
 
     log_info "System ready for deployment"
 }
