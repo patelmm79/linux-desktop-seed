@@ -345,21 +345,33 @@ install_openrouter() {
         return 0
     fi
 
-    # Install Node.js if not present
+    # Install Node.js and npm from Ubuntu repositories (more secure)
     if ! command -v node &> /dev/null; then
         log_info "Installing Node.js..."
 
-        # Add NodeSource repository
-        curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-
-        if ! apt-get install -y nodejs; then
-            log_error "Failed to install Node.js"
-            return 1
+        # Try Ubuntu repositories first
+        if ! apt-get install -y nodejs npm 2>/dev/null; then
+            # Fallback to NodeSource if Ubuntu repos fail
+            log_info "Ubuntu Node.js not available, using NodeSource..."
+            if ! curl -fsSL https://deb.nodesource.com/setup_20.x | bash -; then
+                log_error "Failed to setup NodeSource repository"
+                return 1
+            fi
+            if ! apt-get install -y nodejs; then
+                log_error "Failed to install Node.js"
+                return 1
+            fi
         fi
     fi
 
-    # Install OpenRouter CLI
-    if ! npm install -g openrouter; then
+    # Verify npm is available
+    if ! command -v npm &> /dev/null; then
+        log_error "npm not available after Node.js installation"
+        return 1
+    fi
+
+    # Install OpenRouter CLI (with proper error handling)
+    if ! npm install -g openrouter 2>&1; then
         log_error "Failed to install OpenRouter CLI"
         return 1
     fi
