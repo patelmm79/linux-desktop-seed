@@ -244,6 +244,77 @@ install_vscode() {
     log_info "VS Code installed successfully"
 }
 
+# Install Claude Code CLI
+install_claude_code() {
+    log_info "Installing Claude Code..."
+
+    # Check if already installed
+    if command -v claude &> /dev/null; then
+        log_warn "Claude Code already installed"
+        return 0
+    fi
+
+    # Create installation directory
+    mkdir -p ~/.local/bin
+
+    # Download and run the official Claude Code installer
+    # Using the official installer script from Anthropic
+    if ! curl -sSfL https://docs.anthropic.com/claude-code/installer.sh | sh; then
+        log_error "Failed to install Claude Code"
+        return 1
+    fi
+
+    # Verify installation
+    if ! command -v claude &> /dev/null; then
+        log_error "Claude Code installation failed - command not found"
+        return 1
+    fi
+
+    log_info "Claude Code installed successfully"
+}
+
+# Configure Claude Code to use OpenRouter
+configure_claude_openrouter() {
+    log_info "Configuring Claude Code to use OpenRouter..."
+
+    # Create Claude Code config directory
+    mkdir -p ~/.config/claude
+
+    # Check if API key is provided via environment variable
+    if [[ -n "${OPENROUTER_API_KEY:-}" ]]; then
+        log_info "OpenRouter API key found in environment"
+    elif [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
+        log_info "Anthropic API key found in environment"
+    else
+        log_warn "No API key found - Claude Code will need manual configuration"
+        log_warn "Set OPENROUTER_API_KEY or ANTHROPIC_API_KEY environment variable"
+    fi
+
+    # Configure OpenRouter as API provider
+    # Create Claude Code settings with OpenRouter endpoint
+    cat > ~/.config/claude/settings.json << 'EOF'
+{
+  "apiKey": "",
+  "apiUrl": "https://openrouter.ai/api/v1"
+}
+EOF
+
+    # Create environment setup script for OpenRouter
+    cat > ~/.config/claude/openrouter-env.sh << 'EOF'
+# Claude Code OpenRouter Configuration
+# Source this file or add to your ~/.bashrc
+
+# Set OpenRouter as the API endpoint
+export ANTHROPIC_API_BASE="https://openrouter.ai/api/v1"
+
+# Set your API key (replace with your actual key)
+# export OPENROUTER_API_KEY="your_api_key_here"
+# export ANTHROPIC_API_KEY="$OPENROUTER_API_KEY"
+EOF
+
+    log_info "Claude Code OpenRouter configuration complete"
+}
+
 # Main function
 main() {
     log_info "Starting Remote Desktop Deployment v$SCRIPT_VERSION"
@@ -255,6 +326,8 @@ main() {
     install_gnome
     install_xrdp
     install_vscode
+    install_claude_code
+    configure_claude_openrouter
 
     log_info "System ready for deployment"
 }
