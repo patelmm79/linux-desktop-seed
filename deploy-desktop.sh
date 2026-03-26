@@ -60,13 +60,22 @@ update_system() {
     export DEBIAN_FRONTEND=noninteractive
 
     # Update package lists
-    apt-get update -y
+    log_info "Running apt-get update..."
+    if ! apt-get update -y; then
+        log_error "Failed to update package lists"
+        return 1
+    fi
 
     # Upgrade existing packages
-    apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+    log_info "Upgrading existing packages..."
+    if ! apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"; then
+        log_error "Failed to upgrade packages"
+        return 1
+    fi
 
     # Install essential dependencies
-    apt-get install -y \
+    log_info "Installing essential dependencies..."
+    if ! apt-get install -y \
         curl \
         wget \
         gnupg2 \
@@ -74,7 +83,24 @@ update_system() {
         apt-transport-https \
         ca-certificates \
         lsb-release \
-        jq
+        jq; then
+        log_error "Failed to install dependencies"
+        return 1
+    fi
+
+    # Clean up
+    log_info "Cleaning up package cache..."
+    apt-get autoremove -y
+    apt-get clean
+
+    # Verify critical dependencies
+    log_info "Verifying critical tools..."
+    for cmd in curl wget jq; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            log_error "Critical command '$cmd' not found after installation"
+            return 1
+        fi
+    done
 
     log_info "System updated successfully"
 }
