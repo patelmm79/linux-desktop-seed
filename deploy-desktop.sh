@@ -218,14 +218,17 @@ install_vscode() {
         return 0
     fi
 
-    # Add Microsoft GPG key
-    if ! wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | apt-key add -; then
+    # Create keyrings directory if it doesn't exist
+    mkdir -p /etc/apt/keyrings
+
+    # Download and add Microsoft GPG key using modern method
+    if ! wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg 2>/dev/null; then
         log_error "Failed to add Microsoft GPG key"
         return 1
     fi
 
-    # Add VS Code repository
-    echo "deb [arch=amd64] https://packages.microsoft.com/repos/code stable main" | tee /etc/apt/sources.list.d/vscode.list > /dev/null
+    # Add VS Code repository with signed-by option
+    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main" | tee /etc/apt/sources.list.d/vscode.list > /dev/null
 
     # Update and install
     if ! apt-get update -y; then
