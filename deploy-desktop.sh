@@ -152,11 +152,23 @@ install_xrdp() {
     if [[ -f /etc/xrdp/xrdp.ini ]]; then
         # Backup original
         cp /etc/xrdp/xrdp.ini /etc/xrdp/xrdp.ini.bak
-
-        # Set GNOME as default session
-        sed -i 's/^name=.*/name=GNOME Session/' /etc/xrdp/xrdp.ini
-        sed -i 's/^command=.*/command=gnome-session/' /etc/xrdp/xrdp.ini
     fi
+
+    # Create custom start script for GNOME
+    cat > /etc/xrdp/startwm.sh << 'EOF'
+#!/bin/sh
+# xrdp GNOME session script
+
+if [ -r /etc/profile ]; then
+    . /etc/profile
+fi
+
+# Start GNOME session
+exec /usr/bin/gnome-session
+EOF
+
+    # Make it executable
+    chmod +x /etc/xrdp/startwm.sh
 
     # Enable and start xrdp
     systemctl enable xrdp
