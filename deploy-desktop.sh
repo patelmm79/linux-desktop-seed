@@ -485,6 +485,63 @@ EOF
     log_info "Environment configured"
 }
 
+# Configure MCP (Model Context Protocol) servers for Claude Code
+configure_mcp_servers() {
+    log_info "Configuring MCP servers..."
+
+    # MCP servers are defined via CLAUDE_MCP_SERVERS env variable
+    # Format: "name:transport:url,name2:transport2:url2"
+    # Example: "figma:http:https://mcp.figma.com/mcp,sentry:http:https://mcp.sentry.dev/mcp"
+    local mcp_servers="${CLAUDE_MCP_SERVERS:-}"
+
+    if [[ -z "$mcp_servers" ]]; then
+        log_info "No MCP servers configured (set CLAUDE_MCP_SERVERS to add)"
+        return 0
+    fi
+
+    # Ensure claude config directory exists
+    mkdir -p ~/.claude
+
+    # Create or read existing config
+    local config_file="$HOME/.claude.json"
+    local config_json
+
+    if [[ -f "$config_file" ]]; then
+        config_json=$(cat "$config_file")
+    else
+        config_json='{}'
+    fi
+
+    # Parse and add each MCP server
+    IFS=',' read -ra SERVERS <<< "$mcp_servers"
+    for server in "${SERVERS[@]}"; do
+        # Parse: name:transport:url
+        local name transport url
+        IFS=':' read -r name transport url <<< "$server"
+
+        if [[ -z "$name" || -z "$transport" || -z "$url" ]]; then
+            log_warn "Invalid MCP server format: $server (expected name:transport:url)"
+            continue
+        fi
+
+        log_info "Adding MCP server: $name"
+
+        # Add to user-level mcpServers using jq
+        if command -v jq &> /dev/null; then
+            config_json=$(echo "$config_json" | jq --arg name "$name" --arg transport "$transport" --arg url "$url" \
+                '.mcpServers = (.mcpServers // {}) + {($name): {"type": $transport, "url": $url}}')
+        else
+            log_warn "jq not installed, cannot configure MCP servers"
+            return 1
+        fi
+    done
+
+    # Write updated config
+    echo "$config_json" > "$config_file"
+
+    log_info "MCP servers configured: $mcp_servers"
+}
+
 # Create desktop shortcuts for installed applications
 create_desktop_shortcuts() {
     log_info "Creating desktop shortcuts..."
@@ -589,6 +646,7 @@ main() {
     install_openrouter
     install_chromium
     setup_environment
+    configure_mcp_servers
     create_desktop_shortcuts
     show_summary
 
