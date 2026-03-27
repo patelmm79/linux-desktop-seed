@@ -412,30 +412,28 @@ EOF
     log_info "OpenRouter CLI installed with default model: minimax2.5"
 }
 
-# Install Chromium Browser
+# Install Chromium/Chrome Browser
 install_chromium() {
-    log_info "Installing Chromium Browser..."
+    log_info "Installing Browser..."
 
-    # Check if already installed
+    # Check if already installed (prefer Google Chrome)
+    if command -v google-chrome-stable &> /dev/null; then
+        log_warn "Google Chrome already installed"
+        return 0
+    fi
+
     if command -v chromium &> /dev/null || command -v chromium-browser &> /dev/null; then
         log_warn "Chromium already installed"
         return 0
     fi
 
-    # Also check for Google Chrome as fallback
-    if command -v google-chrome &> /dev/null || command -v google-chrome-stable &> /dev/null; then
-        log_warn "Google Chrome already installed"
-        return 0
+    # Remove problematic snap versions if present
+    if command -v snap &> /dev/null; then
+        snap remove chromium firefox 2>/dev/null || true
     fi
 
-    # Try to install Chromium from Ubuntu repositories
-    if apt-get install -y chromium-browser 2>/dev/null; then
-        log_info "Chromium installed from Ubuntu repositories"
-        return 0
-    fi
-
-    # Fallback: install Google Chrome if Chromium unavailable
-    log_info "Chromium not available, installing Google Chrome..."
+    # Install Google Chrome (more reliable than snap chromium)
+    log_info "Installing Google Chrome..."
 
     # Add Google Chrome repository
     if ! wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg 2>/dev/null; then
@@ -584,20 +582,28 @@ Terminal=true
 Categories=Development;AI;
 EOF
 
-    # Chromium/Chrome shortcut - check which is installed
-    local browser_exec="chromium-browser"
-    if ! command -v chromium-browser &> /dev/null; then
-        browser_exec="google-chrome-stable"
+    # Chromium/Chrome shortcut - prefer Google Chrome (more reliable)
+    local browser_exec="google-chrome-stable"
+    if ! command -v google-chrome-stable &> /dev/null; then
+        browser_exec="chromium-browser"
     fi
 
-    cat > "$desktop_dir/Chromium.desktop" << EOF
+    # Browser shortcut
+    local browser_name="Google Chrome"
+    local browser_icon="google-chrome"
+    if [[ "$browser_exec" == "chromium-browser" ]]; then
+        browser_name="Chromium Browser"
+        browser_icon="chromium-browser"
+    fi
+
+    cat > "$desktop_dir/Browser.desktop" << EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Chromium Browser
+Name=$browser_name
 Comment=Web Browser
 Exec=$browser_exec
-Icon=chromium-browser
+Icon=$browser_icon
 Terminal=false
 Categories=Network;WebBrowser;
 EOF
