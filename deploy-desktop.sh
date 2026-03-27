@@ -47,6 +47,11 @@ detect_ubuntu_version() {
                 log_warn "Ubuntu $UBUNTU_VERSION may not be fully tested"
                 ;;
         esac
+
+        # Ensure X11 allows any user (needed for RDP)
+        if [[ ! -f /etc/X11/Xwrapper.config ]] || ! grep -q "allowed_users" /etc/X11/Xwrapper.config 2>/dev/null; then
+            echo "allowed_users=any" > /etc/X11/Xwrapper.config
+        fi
     else
         log_error "Cannot detect OS version"
         exit 1
@@ -206,6 +211,95 @@ EOF
 
     log_info "xrdp configured successfully"
     log_info "RDP access: Port 3389"
+}
+
+# Create non-root user for RDP access
+create_desktop_user() {
+    local username="${DESKTOP_USER:-desktopuser}"
+    local password="${DESKTOP_USER_PASSWORD:-}"
+    local keyring_fix="${DESKTOP_USER_KEYRING_FIX:-true}"
+
+    log_info "Creating desktop user: $username"
+
+    # Check if user already exists
+    if id "$username" &>/dev/null; then
+        log_info "User $username already exists"
+    else
+        # Create user
+        useradd -m -s /bin/bash -G sudo,adm,cdrom,dip,plugdev "$username" || {
+            log_error "Failed to create user $username"
+            return 1
+        }
+        log_info "User $username created"
+    fi
+
+    # Set password if provided
+    if [[ -n "$password" ]]; then
+        echo "$username:$password" | chpasswd || log_warn "Could not set password"
+    fi
+
+    # Allow passwordless sudo for convenience (optional, can be removed for security)
+    if [[ ! -f /etc/sudoers.d/"$username" ]]; then
+        echo "$username ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/"$username"
+        chmod 440 /etc/sudoers.d/"$username"
+    fi
+
+    log_info "Desktop user configured: $username"
+}
+
+# Copy desktop configuration to user
+copy_desktop_configs() {
+    local username="${DESKTOP_USER:-desktopuser}"
+    local user_home="/home/$username"
+
+    log_info "Copying desktop configurations to $username..."
+
+    # Copy desktop shortcuts
+    if [[ -d /root/Desktop ]]; then
+        cp -r /root/Desktop "$user_home/" 2>/dev/null || true
+        chown -R "$username:$username" "$user_home/Desktop" 2>/dev/null || true
+    fi
+
+    # Copy Claude config
+    if [[ -d /root/.config/claude ]]; then
+        mkdir -p "$user_home/.config/claude"
+        cp -r /root/.config/claude/* "$user_home/.config/claude/" 2>/dev/null || true
+        chown -R "$username:$username" "$user_home/.config/claude" 2>/dev/null || true
+    fi
+
+    # Copy MCP config
+    if [[ -d /root/.config/desktop-seed ]]; then
+        mkdir -p "$user_home/.config/desktop-seed"
+        cp -r /root/.config/desktop-seed/* "$user_home/.config/desktop-seed/" 2>/dev/null || true
+        chown -R "$username:$username" "$user_home/.config/desktop-seed" 2>/dev/null || true
+    fi
+
+    # Copy Claude JSON config
+    if [[ -f /root/.claude.json ]]; then
+        cp /root/.claude.json "$user_home/" 2>/dev/null || true
+        chown "$username:$username" "$user_home/.claude.json" 2>/dev/null || true
+    fi
+
+    # Copy MCP servers config file
+    if [[ -f /root/.config/desktop-seed/mcp-servers ]]; then
+        mkdir -p "$user_home/.config/desktop-seed"
+        cp /root/.config/desktop-seed/mcp-servers "$user_home/.config/desktop-seed/" 2>/dev/null || true
+        chown "$username:$username" "$user_home/.config/desktop-seed/mcp-servers" 2>/dev/null || true
+    fi
+
+    # Create keyring auto-unlock for the user
+    mkdir -p "$user_home/.config/autostart"
+    cat > "$user_home/.config/autostart/unlock-keyring.desktop" << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=Unlock Keyring
+Exec=bash -c 'echo -n | gnome-keyring-daemon --unlock --components=secrets'
+Hidden=true
+X-GNOME-Autostart-enabled=true
+EOF
+    chown "$username:$username" "$user_home/.config/autostart/unlock-keyring.desktop"
+
+    log_info "Desktop configurations copied to $username"
 }
 
 # Install Visual Studio Code
@@ -549,26 +643,6 @@ configure_mcp_servers() {
     log_info "MCP servers configured: $mcp_servers"
 }
 
-# Configure GNOME Keyring for RDP sessions
-configure_keyring() {
-    log_info "Configuring GNOME Keyring..."
-
-    # Create autostart to unlock keyring without password prompt
-    local autostart_dir="$HOME/.config/autostart"
-    mkdir -p "$autostart_dir"
-
-    cat > "$autostart_dir/unlock-keyring.desktop" << 'EOF'
-[Desktop Entry]
-Type=Application
-Name=Unlock Keyring
-Exec=bash -c 'echo -n | gnome-keyring-daemon --unlock --components=secrets'
-Hidden=true
-X-GNOME-Autostart-enabled=true
-EOF
-
-    log_info "Keyring auto-unlock configured"
-}
-
 # Create desktop shortcuts for installed applications
 create_desktop_shortcuts() {
     log_info "Creating desktop shortcuts..."
@@ -675,6 +749,8 @@ main() {
     update_system
     install_gnome
     install_xrdp
+    create_desktop_user
+    copy_desktop_configs
     install_vscode
     install_claude_code
     configure_claude_openrouter
@@ -682,7 +758,6 @@ main() {
     install_chromium
     setup_environment
     configure_mcp_servers
-    configure_keyring
     create_desktop_shortcuts
     show_summary
 
