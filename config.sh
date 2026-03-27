@@ -45,6 +45,11 @@ COMPONENTS[node_name]="Node.js"
 COMPONENTS[node_check]="command -v node &> /dev/null"
 COMPONENTS[node_required]="false"
 
+# MCP Servers (optional - configured via config file)
+COMPONENTS[mcp_name]="MCP Servers"
+COMPONENTS[mcp_check]="[[ -f \"\$HOME/.config/desktop-seed/mcp-servers\" ]] && [[ -s \"\$HOME/.config/desktop-seed/mcp-servers\" ]]"
+COMPONENTS[mcp_required]="false"
+
 # Get list of component keys
 get_component_keys() {
     local keys=()
