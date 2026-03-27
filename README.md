@@ -373,6 +373,83 @@ sudo bash scripts/monitor.sh --disable
 sudo bash scripts/enhance-rdp.sh
 ```
 
+## Known Issues and Solutions
+
+This section documents issues we've encountered and how they were resolved.
+
+### VS Code / Chromium Won't Start
+
+**Symptoms:** Clicking the desktop shortcut does nothing, or apps close immediately.
+
+**Cause:** Running as root user via RDP. Many applications (VS Code, browsers) refuse to run as root for security reasons.
+
+**Solution:** Create a non-root user for daily RDP access (see Security Considerations section).
+
+### Browser Apps Don't Work (Ubuntu 24.04)
+
+**Symptoms:** Chromium or Firefox snap versions don't open when clicked.
+
+**Cause:** Ubuntu 24.04 ships Chromium and Firefox as snap packages, which don't work properly in RDP/headless environments.
+
+**Solution:** The deployment script now installs Google Chrome from Google's official repository instead. If you have the snap version, run:
+
+```bash
+sudo snap remove chromium firefox
+wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo dpkg -i /tmp/chrome.deb
+```
+
+### RDP Session Shows Blank Screen
+
+**Symptoms:** Connect via RDP but see a blank or solid-color screen.
+
+**Cause:** xrdp may not be configured correctly with GNOME.
+
+**Solution:**
+```bash
+sudo systemctl restart xrdp
+# Wait 30 seconds and reconnect
+```
+
+### Applications Don't Appear in Desktop Search
+
+**Cause:** Desktop shortcuts may not have been copied to your user.
+
+**Solution:**
+```bash
+# Copy shortcuts to your user (replace 'your_username')
+sudo cp -r /root/Desktop /home/your_username/
+sudo chown -R your_username:your_username /home/your_username/Desktop
+```
+
+### MCP Server Shows "Needs Authentication"
+
+**Cause:** MCP servers like Figma require OAuth authentication, not just installation.
+
+**Solution:** Open Claude Code in a terminal on the desktop and follow the OAuth flow when prompted. The first time you use an MCP server, it will open a browser window for authentication.
+
+### Sound Doesn't Play Over RDP
+
+**Cause:** Audio redirection requires additional client configuration.
+
+**Solution:**
+1. In Windows Remote Desktop, go to Show Options → Local Resources
+2. Under "Remote audio", click "Settings"
+3. Select "Play on remote computer"
+4. Save and reconnect
+
+### Clipboard Not Syncing
+
+**Cause:** xrdp clipboard syncing can be unreliable.
+
+**Solution:**
+```bash
+# Restart clipboard service
+sudo systemctl restart xrdp
+# If that doesn't work, reboot the server
+sudo reboot
+```
+
 ## Troubleshooting
 
 ### SSH Connection Issues
