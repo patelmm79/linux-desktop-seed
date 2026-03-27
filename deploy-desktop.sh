@@ -354,7 +354,7 @@ install_claude_code() {
         if ! apt-get install -y nodejs npm 2>/dev/null; then
             # Fallback to NodeSource if Ubuntu repos fail
             log_info "Using NodeSource for Node.js..."
-            if ! curl -fsSL https://deb.nodesource.com/setup_20.x | bash -; then
+            if ! curl -fsSL https://deb.nodesource.com/setup_22.x | bash -; then
                 log_error "Failed to setup NodeSource repository"
                 return 1
             fi
@@ -466,7 +466,7 @@ install_openrouter() {
         if ! apt-get install -y nodejs npm 2>/dev/null; then
             # Fallback to NodeSource if Ubuntu repos fail
             log_info "Ubuntu Node.js not available, using NodeSource..."
-            if ! curl -fsSL https://deb.nodesource.com/setup_20.x | bash -; then
+            if ! curl -fsSL https://deb.nodesource.com/setup_22.x | bash -; then
                 log_error "Failed to setup NodeSource repository"
                 return 1
             fi
