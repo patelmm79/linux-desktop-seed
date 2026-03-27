@@ -549,6 +549,26 @@ configure_mcp_servers() {
     log_info "MCP servers configured: $mcp_servers"
 }
 
+# Configure GNOME Keyring for RDP sessions
+configure_keyring() {
+    log_info "Configuring GNOME Keyring..."
+
+    # Create autostart to unlock keyring without password prompt
+    local autostart_dir="$HOME/.config/autostart"
+    mkdir -p "$autostart_dir"
+
+    cat > "$autostart_dir/unlock-keyring.desktop" << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=Unlock Keyring
+Exec=bash -c 'echo -n | gnome-keyring-daemon --unlock --components=secrets'
+Hidden=true
+X-GNOME-Autostart-enabled=true
+EOF
+
+    log_info "Keyring auto-unlock configured"
+}
+
 # Create desktop shortcuts for installed applications
 create_desktop_shortcuts() {
     log_info "Creating desktop shortcuts..."
@@ -662,6 +682,7 @@ main() {
     install_chromium
     setup_environment
     configure_mcp_servers
+    configure_keyring
     create_desktop_shortcuts
     show_summary
 
