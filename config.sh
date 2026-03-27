@@ -35,6 +35,11 @@ COMPONENTS[openrouter_name]="OpenRouter CLI"
 COMPONENTS[openrouter_check]="command -v orc &> /dev/null || command -v openrouter &> /dev/null"
 COMPONENTS[openrouter_required]="false"
 
+# Claude Code Router (CCR)
+COMPONENTS[ccr_name]="Claude Code Router"
+COMPONENTS[ccr_check]="command -v ccr &> /dev/null"
+COMPONENTS[ccr_required]="false"
+
 # Chromium Browser
 COMPONENTS[chromium_name]="Chromium Browser"
 COMPONENTS[chromium_check]="command -v chromium &> /dev/null || command -v chromium-browser &> /dev/null || command -v google-chrome &> /dev/null"

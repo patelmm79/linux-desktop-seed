@@ -506,6 +506,52 @@ EOF
     log_info "OpenRouter CLI installed with default model: minimax2.5"
 }
 
+# Install Claude Code Router
+install_claude_code_router() {
+    log_info "Installing Claude Code Router..."
+
+    # Check if already installed
+    if command -v ccr &> /dev/null; then
+        log_warn "Claude Code Router already installed"
+        return 0
+    fi
+
+    # Install Node.js 22+ if needed (required for ccr)
+    if ! command -v node &> /dev/null; then
+        log_info "Installing Node.js 22..."
+        if ! curl -fsSL https://deb.nodesource.com/setup_22.x | bash -; then
+            log_error "Failed to setup NodeSource repository"
+            return 1
+        fi
+        if ! apt-get install -y nodejs; then
+            log_error "Failed to install Node.js"
+            return 1
+        fi
+    fi
+
+    # Verify Node.js version is 20+
+    local node_version=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
+    if [[ "$node_version" -lt 20 ]]; then
+        log_warn "Node.js version $node_version is too old, upgrading to Node.js 22..."
+        curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+        apt-get install -y nodejs
+    fi
+
+    # Install claude-code-router
+    if ! npm install -g @musistudio/claude-code-router 2>&1; then
+        log_error "Failed to install Claude Code Router"
+        return 1
+    fi
+
+    # Verify installation
+    if ! command -v ccr &> /dev/null; then
+        log_error "Claude Code Router installation failed - command not found"
+        return 1
+    fi
+
+    log_info "Claude Code Router installed successfully"
+}
+
 # Install Chromium/Chrome Browser
 install_chromium() {
     log_info "Installing Browser..."
@@ -720,6 +766,7 @@ show_summary() {
     log_info "  - Visual Studio Code"
     log_info "  - Claude Code"
     log_info "  - OpenRouter CLI (default model: minimax2.5)"
+    log_info "  - Claude Code Router"
     log_info "  - Chromium Browser"
     log_info ""
     log_info "Connection Information:"
@@ -755,6 +802,7 @@ main() {
     install_claude_code
     configure_claude_openrouter
     install_openrouter
+    install_claude_code_router
     install_chromium
     setup_environment
     configure_mcp_servers
