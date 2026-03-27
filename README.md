@@ -232,9 +232,16 @@ sudo bash tests/validate-install.sh
 ├── config.sh                 # Shared component configuration (declarative)
 ├── tests/
 │   └── validate-install.sh  # Post-installation validation
+├── scripts/
+│   ├── update-desktop.sh    # System updates and package upgrades
+│   ├── health-check.sh      # Health monitoring
+│   ├── backup.sh            # Configuration backup/restore
+│   ├── security.sh          # Firewall and fail2ban setup
+│   ├── monitor.sh           # Log rotation and alerts
+│   └── enhance-rdp.sh       # RDP enhancements (sound, clipboard)
 ├── docs/
 │   ├── usage-guide.md       # Detailed usage documentation
-│   └── ssh-setup-guide.md   # SSH setup guide for Windows
+│   └── ssh-setup_guide.md   # SSH setup guide for Windows
 └── README.md                # This file
 ```
 
@@ -292,6 +299,63 @@ These exist in related spaces but solve different problems:
 - **API Keys:** Store your OpenRouter API key securely. The script writes it to `~/.config/claude/settings.json`.
 - **Strong Passwords:** Use strong passwords for your Ubuntu user account.
 - **Updates:** Keep the server updated with `sudo apt update && sudo apt upgrade`.
+
+## Maintenance Scripts
+
+This project includes maintenance scripts in the `scripts/` directory:
+
+### Update System
+```bash
+# Update packages
+sudo bash scripts/update-desktop.sh
+
+# Full update (upgrades all packages)
+sudo bash scripts/update-desktop.sh --full
+```
+
+### Health Check
+```bash
+# Check system health
+bash scripts/health-check.sh
+
+# Exit codes: 0=healthy, 1=warnings, 2=errors
+```
+
+### Backup & Restore
+```bash
+# Backup configuration
+sudo bash scripts/backup.sh
+
+# List backups
+sudo bash scripts/backup.sh --list
+
+# Restore from backup
+sudo bash scripts/backup.sh --restore
+```
+
+### Security Hardening
+```bash
+# Install firewall and fail2ban
+sudo bash scripts/security.sh
+
+# Remove security tools
+sudo bash scripts/security.sh --uninstall
+```
+
+### Monitoring
+```bash
+# Enable log rotation, disk alerts, service monitoring
+sudo bash scripts/monitor.sh
+
+# Disable monitoring
+sudo bash scripts/monitor.sh --disable
+```
+
+### RDP Enhancements
+```bash
+# Add sound, clipboard support
+sudo bash scripts/enhance-rdp.sh
+```
 
 ## Troubleshooting
 
