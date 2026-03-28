@@ -552,6 +552,31 @@ install_claude_code_router() {
     log_info "Claude Code Router installed successfully"
 }
 
+# Install Claudish (Claude Code proxy for any AI model)
+install_claudish() {
+    log_info "Installing Claudish..."
+
+    # Check if already installed
+    if command -v claudish &> /dev/null; then
+        log_warn "Claudish already installed"
+        return 0
+    fi
+
+    # Install Claudish via npm
+    if ! npm install -g claudish 2>&1; then
+        log_error "Failed to install Claudish"
+        return 1
+    fi
+
+    # Verify installation
+    if ! command -v claudish &> /dev/null; then
+        log_error "Claudish installation failed - command not found"
+        return 1
+    fi
+
+    log_info "Claudish installed successfully"
+}
+
 # Install Chromium/Chrome Browser
 install_chromium() {
     log_info "Installing Browser..."
@@ -861,6 +886,7 @@ main() {
     install_openrouter
     install_claude_code_router
     install_chromium
+    install_claudish
     install_ghcli
     setup_environment
     configure_mcp_servers
