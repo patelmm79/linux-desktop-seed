@@ -171,15 +171,22 @@ install_xrdp() {
 
     # Configure xrdp to use GNOME via custom start script
     if ! cat > /etc/xrdp/startwm.sh << 'EOF'
-#!/bin/sh
+#!/bin/bash
 # xrdp GNOME session script
 
+# Load user environment
 if [ -r /etc/profile ]; then
     . /etc/profile
 fi
 
-# Start GNOME session
-exec /usr/bin/gnome-session
+# Set up proper environment for GNOME under xrdp
+export GNOME_SHELL_SESSION_MODE=ubuntu
+export XDG_SESSION_TYPE=x11
+export XDG_CURRENT_DESKTOP=GNOME
+
+# Start GNOME session with dbus-launch for proper session initialization
+# dbus-launch ensures the message bus is running and properly configured
+exec dbus-launch --exit-with-session /usr/bin/gnome-session
 EOF
     then
         log_error "Failed to create startwm.sh"
