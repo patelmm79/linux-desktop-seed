@@ -231,11 +231,10 @@ EOF
         return 1
     fi
 
-    # Configure xrdp to use GNOME via custom start script
-    # Use Xvnc as the display server (more reliable than Xorg) and launch GNOME on top
+    # Configure xrdp to use GNOME via custom start script with Xvnc display server
     if ! cat > /etc/xrdp/startwm.sh << 'EOF'
 #!/bin/bash
-# xrdp GNOME session script using Xvnc display server
+# xrdp GNOME session script with Xvnc display server
 
 # Load user environment
 if [ -r /etc/profile ]; then
@@ -247,11 +246,8 @@ export GNOME_SHELL_SESSION_MODE=ubuntu
 export XDG_SESSION_TYPE=x11
 export XDG_CURRENT_DESKTOP=GNOME
 
-# Get the DISPLAY from the environment (set by xrdp-sesman)
-# Typically something like :10, :11, etc.
-if [ -z "$DISPLAY" ]; then
-    export DISPLAY=:0
-fi
+# Wait a moment for X server to be ready
+sleep 1
 
 # Start GNOME session with dbus-launch for proper session initialization
 # dbus-launch ensures the message bus is running and properly configured
@@ -265,9 +261,9 @@ EOF
     # Make it executable
     chmod +x /etc/xrdp/startwm.sh
 
-    # Configure sesman to prefer Xvnc over Xorg (more reliable, fewer socket conflicts)
+    # Configure sesman and xrdp to use Xvnc instead of Xorg (more reliable, fewer socket conflicts)
     if [[ -f /etc/xrdp/sesman.ini ]]; then
-        # Remove type=Xorg to disable Xorg sessions
+        # Remove type=Xorg to disable Xorg sessions in sesman
         sed -i '/\[Xorg\]/,/^$/{ /^type=Xorg$/d; }' /etc/xrdp/sesman.ini
 
         # Add type=Xvnc to Xvnc section if not already there
@@ -276,6 +272,29 @@ EOF
         fi
 
         log_info "Configured sesman to use Xvnc sessions"
+    fi
+
+    # Configure xrdp.ini to remove Xorg and use only Xvnc
+    if [[ -f /etc/xrdp/xrdp.ini ]]; then
+        # Use Python to safely remove the Xorg section from xrdp.ini
+        python3 << 'PYSCRIPT'
+import re
+try:
+    with open('/etc/xrdp/xrdp.ini', 'r') as f:
+        content = f.read()
+
+    # Remove entire [Xorg] section (from [Xorg] to next section or end of file)
+    content = re.sub(r'\[Xorg\].*?(?=\[|\Z)', '', content, flags=re.DOTALL)
+
+    with open('/etc/xrdp/xrdp.ini', 'w') as f:
+        f.write(content)
+
+    print("Removed [Xorg] section from xrdp.ini")
+except Exception as e:
+    print(f"Error updating xrdp.ini: {e}")
+PYSCRIPT
+
+        log_info "Configured xrdp.ini to use only Xvnc"
     fi
 
     # Enable and start xrdp
