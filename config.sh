@@ -40,6 +40,11 @@ COMPONENTS[ccr_name]="Claude Code Router"
 COMPONENTS[ccr_check]="command -v ccr &> /dev/null"
 COMPONENTS[ccr_required]="false"
 
+# Claudish (Claude Code proxy for any AI model)
+COMPONENTS[claudish_name]="Claudish"
+COMPONENTS[claudish_check]="command -v claudish &> /dev/null"
+COMPONENTS[claudish_required]="false"
+
 # Chromium Browser
 COMPONENTS[chromium_name]="Chromium Browser"
 COMPONENTS[chromium_check]="command -v chromium &> /dev/null || command -v chromium-browser &> /dev/null || command -v google-chrome &> /dev/null"

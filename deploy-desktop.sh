@@ -153,9 +153,9 @@ install_gnome() {
 install_xrdp() {
     log_info "Installing and configuring xrdp..."
 
-    # Install xrdp
-    if ! apt-get install -y xrdp; then
-        log_error "Failed to install xrdp"
+    # Install xrdp, XFCE (more reliable than GNOME for RDP), and dbus-x11
+    if ! apt-get install -y xrdp xfce4 xfce4-goodies dbus-x11; then
+        log_error "Failed to install xrdp packages"
         return 1
     fi
 
@@ -169,17 +169,17 @@ install_xrdp() {
         cp /etc/xrdp/xrdp.ini /etc/xrdp/xrdp.ini.bak || log_warn "Could not backup xrdp.ini"
     fi
 
-    # Configure xrdp to use GNOME via custom start script
+    # Configure xrdp to use XFCE via custom start script
     if ! cat > /etc/xrdp/startwm.sh << 'EOF'
 #!/bin/sh
-# xrdp GNOME session script
+# xrdp XFCE session script
 
 if [ -r /etc/profile ]; then
     . /etc/profile
 fi
 
-# Start GNOME session
-exec /usr/bin/gnome-session
+# Start XFCE session
+exec startxfce4
 EOF
     then
         log_error "Failed to create startwm.sh"
@@ -192,6 +192,9 @@ EOF
     # Enable and start xrdp
     systemctl enable xrdp
     systemctl enable xrdp-sesman
+
+    # Clean up stale X11 sockets to prevent session conflicts
+    rm -rf /tmp/.X11-unix/X* /tmp/.X*-lock 2>/dev/null || true
 
     if ! systemctl restart xrdp; then
         log_error "Failed to start xrdp service"
@@ -297,6 +300,14 @@ Exec=bash -c 'echo -n | gnome-keyring-daemon --unlock --components=secrets'
 Hidden=true
 X-GNOME-Autostart-enabled=true
 EOF
+
+    # Create .xsession for XFCE (required for xrdp to work properly)
+    cat > "$user_home/.xsession" << 'EOF'
+#!/bin/sh
+exec startxfce4
+EOF
+    chmod 700 "$user_home/.xsession"
+    chown "$username:$username" "$user_home/.xsession"
     chown "$username:$username" "$user_home/.config/autostart/unlock-keyring.desktop"
 
     log_info "Desktop configurations copied to $username"
@@ -550,6 +561,31 @@ install_claude_code_router() {
     fi
 
     log_info "Claude Code Router installed successfully"
+}
+
+# Install Claudish (Claude Code proxy for any AI model)
+install_claudish() {
+    log_info "Installing Claudish..."
+
+    # Check if already installed
+    if command -v claudish &> /dev/null; then
+        log_warn "Claudish already installed"
+        return 0
+    fi
+
+    # Install Claudish via npm
+    if ! npm install -g claudish 2>&1; then
+        log_error "Failed to install Claudish"
+        return 1
+    fi
+
+    # Verify installation
+    if ! command -v claudish &> /dev/null; then
+        log_error "Claudish installation failed - command not found"
+        return 1
+    fi
+
+    log_info "Claudish installed successfully"
 }
 
 # Install Chromium/Chrome Browser
@@ -824,6 +860,7 @@ show_summary() {
     log_info "  - Claude Code"
     log_info "  - OpenRouter CLI (default model: minimax2.5)"
     log_info "  - Claude Code Router"
+    log_info "  - Claudish (AI model proxy)"
     log_info "  - Chromium Browser"
     log_info ""
     log_info "Connection Information:"
@@ -861,6 +898,7 @@ main() {
     install_openrouter
     install_claude_code_router
     install_chromium
+    install_claudish
     install_ghcli
     setup_environment
     configure_mcp_servers
