@@ -27,6 +27,15 @@ sudo bash /tmp/deploy-desktop.sh
 
 # Validate installation on remote server
 sudo bash tests/validate-install.sh
+
+# Monitor session health (on remote server)
+tail -f /var/log/xrdp/session-monitor.log
+tail -f /var/log/xrdp/session-alerts.log
+
+# Analyze crashes and issues
+sudo bash scripts/analyze-session-logs.sh --summary
+sudo bash scripts/analyze-session-logs.sh --crashes
+sudo bash scripts/analyze-session-logs.sh --memory
 ```
 
 ## Architecture
@@ -58,8 +67,12 @@ Both `deploy-desktop.sh` and `tests/validate-install.sh` source this file. When 
 | `deploy-desktop.sh` | Main deployment script |
 | `config.sh` | Shared component configuration (declarative list of components with verification methods) |
 | `tests/validate-install.sh` | Post-deployment validation (sources config.sh automatically) |
+| `scripts/session-monitor.sh` | Session monitoring service installation/management |
+| `scripts/analyze-session-logs.sh` | Quick analysis tool for crashes, memory, and system health |
+| `etc/xrdp/startwm.sh` | Enhanced session startup script with crash recovery |
 | `docs/usage-guide.md` | Detailed user documentation |
 | `docs/ssh-setup-guide.md` | SSH setup guide for Windows |
+| `docs/crash-recovery-guide.md` | Crash recovery and monitoring guide |
 
 ## Important Implementation Details
 
