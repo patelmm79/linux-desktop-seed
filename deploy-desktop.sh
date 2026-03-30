@@ -234,8 +234,42 @@ EOF
     # Configure xrdp to use GNOME via custom start script with Xvnc display server
     if ! cat > /etc/xrdp/startwm.sh << 'EOF'
 #!/bin/bash
-# xrdp GNOME session script with Xvnc display server
+# xrdp GNOME session script with Xvnc display server and crash recovery
 # This script is called by sesman to start the desktop session
+
+set -euo pipefail
+
+# === Session Information Logging ===
+log_session_info() {
+    {
+        echo "=== Starting GNOME session ==="
+        echo "DISPLAY: $DISPLAY"
+        echo "PID: $$"
+        echo "UID: $(id -u)"
+        echo "USER: $(whoami)"
+        echo "GDK_BACKEND: ${GDK_BACKEND:-unset}"
+        echo "QT_QPA_PLATFORM: ${QT_QPA_PLATFORM:-unset}"
+        echo "Time: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+        echo "Memory available: $(free -h | awk 'NR==2 {print $7}')"
+        echo "CPU count: $(nproc)"
+        echo "---"
+    } >> ~/.xsession-errors 2>&1
+}
+
+# === Crash Logging ===
+log_crash_info() {
+    {
+        echo "[ERROR] Session crashed on $(date '+%Y-%m-%d %H:%M:%S')"
+        echo "Exit status: $1"
+        echo "Memory snapshot:"
+        free -h >> ~/.xsession-errors 2>&1
+        echo "Top processes by memory:"
+        ps aux --sort=-%mem | head -5 >> ~/.xsession-errors 2>&1
+        echo "---"
+    } >> ~/.xsession-errors 2>&1
+}
+
+trap 'log_crash_info $?' EXIT
 
 # Load user environment
 if [ -r /etc/profile ]; then
@@ -259,6 +293,10 @@ if [ -z "$DISPLAY" ]; then
     exit 1
 fi
 
+# === Memory Management ===
+# Set conservative memory limits to prevent OOM kill
+ulimit -v 2097152  # ~2GB virtual memory limit per process
+
 # Set up proper environment for GNOME under xrdp
 export GNOME_SHELL_SESSION_MODE=ubuntu
 export XDG_SESSION_TYPE=x11
@@ -272,21 +310,29 @@ export GDK_BACKEND=x11
 export QT_QPA_PLATFORM=xcb
 export GNOME_SHELL_WAYLANDRESTART=false
 
+# Disable debug logging by default for performance
+export G_MESSAGES_DEBUG="${G_MESSAGES_DEBUG:-}"
+
+# === Keyring Initialization ===
+# Start gnome-keyring-daemon if not already running
+if ! pgrep -u "$UID" -f "gnome-keyring-daemon.*${DISPLAY}" > /dev/null 2>&1; then
+    eval "$(gnome-keyring-daemon --start --components=secrets,pkcs11 2>/dev/null)" || true
+    {
+        echo "=== Keyring Daemon Started ==="
+        echo "GNOME_KEYRING_CONTROL: ${GNOME_KEYRING_CONTROL:-unset}"
+        echo "SSH_AUTH_SOCK: ${SSH_AUTH_SOCK:-unset}"
+    } >> ~/.xsession-errors 2>&1
+fi
+
+# Ensure D-Bus is properly configured for the session
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
+
 # Ensure X authority file exists and is readable
 if [ -n "$XAUTHORITY" ] && [ ! -f "$XAUTHORITY" ]; then
     touch "$XAUTHORITY" 2>/dev/null || true
 fi
 
-# Log what we're about to do
-{
-    echo "=== Starting GNOME session ==="
-    echo "DISPLAY: $DISPLAY"
-    echo "UID: $(id -u)"
-    echo "USER: $(whoami)"
-    echo "GDK_BACKEND: $GDK_BACKEND"
-    echo "QT_QPA_PLATFORM: $QT_QPA_PLATFORM"
-    echo "Time: $(date)"
-} >> ~/.xsession-errors 2>&1
+log_session_info
 
 # Start GNOME session with dbus-launch for proper session initialization
 # dbus-launch ensures the message bus is running and properly configured
@@ -980,6 +1026,45 @@ EOF
     log_info "Desktop shortcuts created"
 }
 
+# Setup GNOME Keyring for secure credential storage
+setup_keyring() {
+    log_info "Setting up GNOME Keyring for credential storage..."
+
+    # Install keyring packages
+    if ! apt-get install -y -qq gnome-keyring libsecret-1-0 libpam-gnome-keyring; then
+        log_error "Failed to install keyring packages"
+        return 1
+    fi
+
+    # Verify keyring is available
+    if ! command -v gnome-keyring-daemon &> /dev/null; then
+        log_error "gnome-keyring-daemon not found after installation"
+        return 1
+    fi
+
+    log_info "GNOME Keyring installed and configured"
+}
+
+# Setup session monitoring and crash recovery
+setup_monitoring() {
+    log_info "Setting up session monitoring and crash recovery..."
+
+    # Copy the monitoring script
+    if [ -f "scripts/session-monitor.sh" ]; then
+        cp scripts/session-monitor.sh /tmp/session-monitor.sh
+        chmod +x /tmp/session-monitor.sh
+
+        # Run setup with --enable flag
+        if bash /tmp/session-monitor.sh --enable 2>&1 | tee -a "$LOG_FILE"; then
+            log_info "Session monitor service installed and started"
+        else
+            log_warn "Session monitor setup encountered issues (non-fatal)"
+        fi
+    else
+        log_warn "Session monitor script not found in scripts/session-monitor.sh"
+    fi
+}
+
 # Display post-installation summary
 show_summary() {
     log_info "========================================="
@@ -994,6 +1079,12 @@ show_summary() {
     log_info "  - OpenRouter CLI (default model: minimax2.5)"
     log_info "  - Claude Code Router"
     log_info "  - Chromium Browser"
+    log_info ""
+    log_info "Security & Monitoring:"
+    log_info "  - GNOME Keyring (secure credential storage)"
+    log_info "  - Session monitoring (crash detection)"
+    log_info "  - Memory management (prevents OOM)"
+    log_info "  - Continuous health checks (every 30 seconds)"
     log_info ""
     log_info "Connection Information:"
     log_info "  - RDP Port: 3389"
@@ -1035,6 +1126,8 @@ main() {
     setup_environment
     configure_mcp_servers
     create_desktop_shortcuts
+    setup_keyring
+    setup_monitoring
     show_summary
 
     log_info "System ready for deployment"
