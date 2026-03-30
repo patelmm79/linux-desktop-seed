@@ -20,7 +20,8 @@
       "Bash(scp /c/Users/insan/PycharmProjects/desktop-seed/scripts/session-monitor.sh root@204.168.182.32:/tmp/session-monitor.sh)",
       "Bash(scp /c/Users/insan/PycharmProjects/desktop-seed/scripts/analyze-session-logs.sh root@204.168.182.32:/tmp/)",
       "Bash(scp /c/Users/insan/PycharmProjects/desktop-seed/scripts/setup-keyring.sh root@204.168.182.32:/tmp/)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "WebSearch"
     ]
   }
 }

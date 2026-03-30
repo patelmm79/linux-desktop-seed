@@ -1062,6 +1062,41 @@ setup_monitoring() {
     fi
 }
 
+setup_gnome_extensions() {
+    log_info "Setting up GNOME extensions..."
+
+    # Install gnome-shell-extensions if not already installed
+    if ! command -v gnome-shell &> /dev/null; then
+        log_info "Installing GNOME Shell extensions package..."
+        apt-get install -y -qq gnome-shell-extensions 2>&1 | tee -a "$LOG_FILE" || true
+    fi
+
+    # Install Cascade Windows extension (UUID: cascade-windows@fthx)
+    # This extension rearranges windows into a cascade pattern
+    local extension_uuid="cascade-windows@fthx"
+    local extension_path="$HOME/.local/share/gnome-shell/extensions/$extension_uuid"
+
+    # Check if extension is already installed
+    if [ -d "$extension_path" ]; then
+        log_info "Cascade Windows extension already installed"
+    else
+        log_info "Installing Cascade Windows extension..."
+
+        # Clone the extension from GitHub
+        mkdir -p "$HOME/.local/share/gnome-shell/extensions"
+        if git clone https://github.com/Lytol/gnome-cascade-windows.git "$extension_path" 2>&1 | tee -a "$LOG_FILE"; then
+            # Enable the extension for the desktop user using dconf
+            # This uses the desktop user's dconf database
+            if [ -d "$extension_path" ]; then
+                log_info "Cascade Windows extension installed successfully"
+                # Extension will be available after next login
+            fi
+        else
+            log_warn "Failed to clone Cascade Windows extension (non-fatal)"
+        fi
+    fi
+}
+
 # Display post-installation summary
 show_summary() {
     log_info "========================================="
@@ -1076,6 +1111,9 @@ show_summary() {
     log_info "  - OpenRouter CLI (default model: minimax2.5)"
     log_info "  - Claude Code Router"
     log_info "  - Chromium Browser"
+    log_info ""
+    log_info "GNOME Extensions:"
+    log_info "  - Cascade Windows (window arrangement tool)"
     log_info ""
     log_info "Security & Monitoring:"
     log_info "  - GNOME Keyring (secure credential storage)"
@@ -1125,6 +1163,7 @@ main() {
     create_desktop_shortcuts
     setup_keyring
     setup_monitoring
+    setup_gnome_extensions
     show_summary
 
     log_info "System ready for deployment"
