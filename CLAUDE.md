@@ -46,7 +46,7 @@ The deployment script (`deploy-desktop.sh`) installs and configures:
 
 ### VM Testing
 
-All changes tested on **204.168.182.32** before commit. When reporting issues, always fix in repository scripts so future deployments benefit automatically.
+All changes tested on a VM before commit. When reporting issues, always fix in repository scripts so future deployments benefit automatically.
 
 ## Architecture
 
@@ -225,7 +225,7 @@ bash scripts/analyze-session-logs.sh --summary  # Health check
 ```
 
 ### Test VM
-Current test machine: **204.168.182.32**
+Current test machine: configured via workflow_dispatch input
 - Monitors: systemctl status xrdp-session-monitor.service
 - Health: bash scripts/analyze-session-logs.sh --summary
 - Logs: tail -50 /var/log/xrdp-sesman.log
@@ -355,7 +355,7 @@ fix: ensure keyring daemon inherits dbus-launch context
 
 Main branch workflow:
 1. Make changes locally
-2. Test on 204.168.182.32 if possible
+2. Test on a VM if possible
 3. Commit with detailed message
 4. Push to main
 
@@ -409,8 +409,8 @@ Potential improvements:
 
 ---
 
-**Last Updated:** March 30, 2026
+**Last Updated:** March 31, 2026
 **Status:** Production Ready ✅
-**Test Machine:** 204.168.182.32
+**Test Machine:** Configured via GitHub workflow
 **Crash Detection:** < 30 seconds
 **Uptime:** Continuous monitoring active

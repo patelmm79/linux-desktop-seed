@@ -6,6 +6,56 @@ Automated setup for a full Linux desktop environment on a remote Ubuntu server �
 
 ---
 
+## Table of Contents
+
+- [What Problem Does This Solve?](#what-problem-does-this-solve)
+- [Disclaimer](#disclaimer)
+- [Tested On: Hetzner CPX32](#tested-on-hetzner-cpx32)
+- [What Gets Installed](#what-gets-installed)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [Connecting from Different Devices](#connecting-from-different-devices)
+- [Using the Installed Tools](#using-the-installed-tools)
+- [How Crash Detection Works](#how-crash-detection-works)
+- [How Credential Storage Works](#how-credential-storage-works)
+- [Troubleshooting](#troubleshooting)
+- [Monitoring & Services](#monitoring--services)
+- [Configuration](#configuration)
+- [Log File Locations](#log-file-locations)
+- [Performance Expectations](#performance-expectations)
+- [Known Limitations](#known-limitations)
+- [Documentation](#documentation)
+- [Script Structure](#script-structure)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## What Problem Does This Solve?
+
+Running a development environment on a cloud server (like an AWS EC2 instance or Hetzner VPS) normally gives you only a terminal. This script turns that server into a **full graphical desktop** you can connect to from any Windows PC or Android tablet — just like using a remote computer.
+
+It also handles the painful parts automatically:
+
+- Setting up the graphical desktop and RDP server (normally 30+ manual steps)
+- Preventing and detecting session crashes (used to take 3+ hours to notice; now < 30 seconds)
+- Storing credentials securely so VS Code doesn't throw keyring errors
+- Pre-installing all development tools so you can start working immediately
+
+---
+
+## Disclaimer
+
+**Use at your own risk.** This project was built by someone learning Linux as they went — not a Linux expert. It works for my specific use case, but your setup, server provider, or Ubuntu version may behave differently.
+
+- No guarantees of stability, security, or fitness for any particular purpose
+- Review the scripts before running them — they require root access and make significant system changes
+- The [MIT license](LICENSE) applies: this software is provided "as is", without warranty of any kind
+
+If you find something broken or risky, [open an issue](https://github.com/patelmm79/linux-desktop-seed/issues) — improvements are welcome.
+
+---
+
 ## Tested On: Hetzner CPX32
 
 This setup has been validated on a **[Hetzner CPX32](https://www.hetzner.com/cloud/)** cloud instance — a solid mid-range option for this workload:
@@ -34,33 +84,20 @@ The CPX32 handles this load comfortably at idle (~3 GB RAM used), with headroom 
 
 ---
 
-## What Problem Does This Solve?
-
-Running a development environment on a cloud server (like an AWS EC2 instance or Hetzner VPS) normally gives you only a terminal. This script turns that server into a **full graphical desktop** you can connect to from any Windows PC or Android tablet — just like using a remote computer.
-
-It also handles the painful parts automatically:
-
-- Setting up the graphical desktop and RDP server (normally 30+ manual steps)
-- Preventing and detecting session crashes (used to take 3+ hours to notice; now < 30 seconds)
-- Storing credentials securely so VS Code doesn't throw keyring errors
-- Pre-installing all development tools so you can start working immediately
-
----
-
 ## What Gets Installed
 
 | Tool | What It Is | Why It's Here |
 |------|-----------|---------------|
-| **GNOME Desktop** | The graphical user interface (GUI) | Gives you a full desktop with windows, taskbar, and apps |
-| **xrdp** | Remote Desktop Protocol server | Lets you connect to the desktop from Windows or Android |
-| **VS Code** | Code editor | Full-featured editor with extensions, debugger, terminal |
-| **Claude Code** | AI coding assistant (terminal-based) | AI pair programmer — run `claude` in any terminal |
-| **OpenRouter CLI** | Access to AI models via API | Lets Claude Code connect to AI models |
-| **Chromium** | Open-source web browser | Full browser available inside the remote desktop |
-| **OpenCLAW** | Remote Discord client | Connects to remote Discord instances from the desktop |
-| **GitHub CLI** | GitHub from the command line | Push/pull repos, manage PRs without browser auth |
-| **GNOME Keyring** | Secure credential/password storage | Prevents "OS keyring not available" errors in VS Code |
-| **Cascade Windows** | Window arrangement extension | Tiles and organizes windows on the desktop |
+| [**GNOME Desktop**](https://www.gnome.org/) | The graphical user interface (GUI) | Gives you a full desktop with windows, taskbar, and apps |
+| [**xrdp**](http://xrdp.org/) | Remote Desktop Protocol server | Lets you connect to the desktop from Windows or Android |
+| [**VS Code**](https://code.visualstudio.com/) | Code editor | Full-featured editor with extensions, debugger, terminal |
+| [**Claude Code**](https://claude.ai/code) | AI coding assistant (terminal-based) | AI pair programmer — run `claude` in any terminal |
+| [**OpenRouter CLI**](https://openrouter.ai/) | Access to AI models via API | Lets Claude Code connect to AI models |
+| [**Chromium**](https://www.chromium.org/chromium-projects/) | Open-source web browser | Full browser available inside the remote desktop |
+| [**OpenCLAW**](https://openclaw.app/) | Remote Discord client | Connects to remote Discord instances from the desktop |
+| [**GitHub CLI**](https://cli.github.com/) | GitHub from the command line | Push/pull repos, manage PRs without browser auth |
+| [**GNOME Keyring**](https://wiki.gnome.org/Projects/GnomeKeyring) | Secure credential/password storage | Prevents "OS keyring not available" errors in VS Code |
+| [**Cascade Windows**](https://extensions.gnome.org/extension/1267/cascade-windows/) | Window arrangement extension | Tiles and organizes windows on the desktop |
 | **Session Monitor** | Background crash detection service | Alerts within 30 seconds if the desktop session crashes |
 
 ---
