@@ -10,24 +10,22 @@ Automated setup for a full Linux desktop environment on a remote Ubuntu server �
 
 - [What Problem Does This Solve?](#what-problem-does-this-solve)
 - [Disclaimer](#disclaimer)
-- [Tested On: Hetzner CPX32](#tested-on-hetzner-cpx32)
 - [What Gets Installed](#what-gets-installed)
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Connecting from Different Devices](#connecting-from-different-devices)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Quick Start](#quick-start)
+  - [Connecting from Different Devices](#connecting-from-different-devices)
 - [Using the Installed Tools](#using-the-installed-tools)
-- [How Crash Detection Works](#how-crash-detection-works)
-- [How Credential Storage Works](#how-credential-storage-works)
-- [Troubleshooting](#troubleshooting)
-- [Monitoring & Services](#monitoring--services)
-- [Configuration](#configuration)
-- [Log File Locations](#log-file-locations)
-- [Performance Expectations](#performance-expectations)
-- [Known Limitations](#known-limitations)
-- [Documentation](#documentation)
-- [Script Structure](#script-structure)
-- [Contributing](#contributing)
-- [License](#license)
+- [Reliability & Monitoring](#reliability--monitoring)
+  - [How Crash Detection Works](#how-crash-detection-works)
+  - [How Credential Storage Works](#how-credential-storage-works)
+  - [Services & Log Files](#services--log-files)
+- [Reference](#reference)
+  - [Troubleshooting](#troubleshooting)
+  - [Configuration](#configuration)
+  - [Performance & Limitations](#performance--limitations)
+  - [Documentation](#documentation)
+- [Contributing & License](#contributing--license)
 
 ---
 
@@ -102,7 +100,9 @@ The CPX32 handles this load comfortably at idle (~3 GB RAM used), with headroom 
 
 ---
 
-## Prerequisites
+## Getting Started
+
+### Prerequisites
 
 Before you start, you need:
 
@@ -132,11 +132,9 @@ sudo visudo
 ```
 Then reboot — the desktop will continue to work without sudo access.
 
----
+### Quick Start
 
-## Quick Start
-
-### Step 1 — Download and upload the scripts
+#### Step 1 — Download and upload the scripts
 
 Run this from your local machine (replace `ubuntu` and `YOUR_SERVER_IP` with your values):
 
@@ -148,7 +146,7 @@ scp deploy-desktop.sh ubuntu@YOUR_SERVER_IP:/tmp/
 scp config.sh ubuntu@YOUR_SERVER_IP:/tmp/
 ```
 
-### Step 2 — SSH into your server and run the installer
+#### Step 2 — SSH into your server and run the installer
 
 ```bash
 ssh ubuntu@YOUR_SERVER_IP
@@ -157,7 +155,7 @@ sudo bash /tmp/deploy-desktop.sh
 
 Installation takes **5–15 minutes** depending on your server's internet speed. You'll see progress messages as each component is installed.
 
-### Step 3 — Connect via Remote Desktop
+#### Step 3 — Connect via Remote Desktop
 
 Once installation finishes, open **Remote Desktop Connection** on Windows (search for it in the Start menu) or install **Microsoft Remote Desktop** from the Google Play Store on Android:
 
@@ -166,7 +164,7 @@ Once installation finishes, open **Remote Desktop Connection** on Windows (searc
 3. Username and password: your Ubuntu account credentials
 4. Connect — the GNOME desktop should appear
 
-### Step 4 — Set up your API key
+#### Step 4 — Set up your API key
 
 Inside the remote desktop, open a terminal and run:
 
@@ -182,16 +180,14 @@ claude --version
 claude   # starts an interactive AI session
 ```
 
----
+### Connecting from Different Devices
 
-## Connecting from Different Devices
-
-### Windows
+#### Windows
 - Use **Remote Desktop Connection** (search in the Start menu) or **Microsoft Remote Desktop** from the Microsoft Store
 - Address: `YOUR_SERVER_IP:3389`
 - Login with your Ubuntu username and password
 
-### Android Tablet
+#### Android Tablet
 - Install **Microsoft Remote Desktop** from the Google Play Store
 - Tap **+** to add a PC, enter your server IP
 - GNOME is touch-friendly — landscape mode works best
@@ -234,7 +230,9 @@ For more detail on using each tool, see [Usage Guide](docs/usage-guide.md).
 
 ---
 
-## How Crash Detection Works
+## Reliability & Monitoring
+
+### How Crash Detection Works
 
 A background service (`xrdp-session-monitor.service`) checks the session every 30 seconds. If something goes wrong, it captures memory usage, CPU load, and running processes at the moment of the problem — so you have real data instead of guessing.
 
@@ -254,9 +252,7 @@ bash scripts/analyze-session-logs.sh --memory
 bash scripts/analyze-session-logs.sh --timeline
 ```
 
----
-
-## How Credential Storage Works
+### How Credential Storage Works
 
 VS Code and other apps use the operating system's keyring (a secure password vault) to store things like GitHub tokens and API keys. On a plain Ubuntu server, this keyring doesn't exist — so you'd see errors like "OS keyring is not available for encryption."
 
@@ -264,9 +260,34 @@ This project fixes that by starting `gnome-keyring-daemon` at the right point in
 
 See [Keyring Guide](docs/keyring-guide.md) for more detail.
 
+### Services & Log Files
+
+```bash
+# Check xrdp (the RDP server)
+systemctl status xrdp
+systemctl status xrdp-sesman
+
+# Check the crash monitor
+systemctl status xrdp-session-monitor.service
+
+# Restart them if needed
+sudo systemctl restart xrdp
+sudo systemctl restart xrdp-session-monitor.service
+```
+
+| Log File | What It Contains |
+|----------|-----------------|
+| `/tmp/deploy-desktop-*.log` | Output from the deployment script |
+| `/var/log/xrdp-sesman.log` | xrdp session connection and error log |
+| `/var/log/xrdp/session-monitor.log` | Continuous health check results |
+| `/var/log/xrdp/session-alerts.log` | Threshold alerts (memory, CPU, crashes) |
+| `~/.xsession-errors` | GNOME session errors for the current user |
+
 ---
 
-## Troubleshooting
+## Reference
+
+### Troubleshooting
 
 ### Quick checks after deployment
 
@@ -288,28 +309,9 @@ This checks that all services are running, all tools are installed, and configur
 
 For detailed troubleshooting steps, see [Troubleshooting Guide](docs/TROUBLESHOOTING.md).
 
----
+### Configuration
 
-## Monitoring & Services
-
-```bash
-# Check xrdp (the RDP server)
-systemctl status xrdp
-systemctl status xrdp-sesman
-
-# Check the crash monitor
-systemctl status xrdp-session-monitor.service
-
-# Restart them if needed
-sudo systemctl restart xrdp
-sudo systemctl restart xrdp-session-monitor.service
-```
-
----
-
-## Configuration
-
-### Adjust memory limits per process
+#### Adjust memory limits per process
 
 Edit `/etc/xrdp/startwm.sh`, find the `ulimit` line:
 
@@ -317,7 +319,7 @@ Edit `/etc/xrdp/startwm.sh`, find the `ulimit` line:
 ulimit -v 2097152  # 2097152 KB = approximately 2 GB per process
 ```
 
-### Adjust monitoring thresholds
+#### Adjust monitoring thresholds
 
 Edit `/var/lib/xrdp/session-monitor-config.sh`:
 
@@ -326,21 +328,7 @@ MEMORY_THRESHOLD=80   # send alert when system memory reaches 80%
 CPU_THRESHOLD=75      # send alert when CPU reaches 75%
 ```
 
----
-
-## Log File Locations
-
-| Log File | What It Contains |
-|----------|-----------------|
-| `/tmp/deploy-desktop-*.log` | Output from the deployment script |
-| `/var/log/xrdp-sesman.log` | xrdp session connection and error log |
-| `/var/log/xrdp/session-monitor.log` | Continuous health check results |
-| `/var/log/xrdp/session-alerts.log` | Threshold alerts (memory, CPU, crashes) |
-| `~/.xsession-errors` | GNOME session errors for the current user |
-
----
-
-## Performance Expectations
+### Performance & Limitations
 
 | Metric | Typical Value |
 |--------|--------------|
@@ -351,18 +339,14 @@ CPU_THRESHOLD=75      # send alert when CPU reaches 75%
 | Deployment time | 5–15 minutes |
 | Crash detection time | < 30 seconds |
 
----
-
-## Known Limitations
+**Known limitations:**
 
 - **Wayland not supported** — this deployment uses Xvnc which only supports X11; GNOME is forced to X11 mode
 - **Single-user only** — designed for one desktop user; multi-user support is not implemented
 - **No sound via RDP** — audio forwarding over RDP is not configured
 - **No printer sharing** — printer redirection is not set up
 
----
-
-## Documentation
+### Documentation
 
 | Guide | Who It's For | What It Covers |
 |-------|-------------|----------------|
@@ -377,7 +361,9 @@ CPU_THRESHOLD=75      # send alert when CPU reaches 75%
 
 ---
 
-## Script Structure
+## Contributing & License
+
+### Script Structure
 
 ```
 deploy-desktop.sh          ← Run this to deploy everything (~1200 lines)
@@ -394,9 +380,7 @@ docs/                      ← Guides (see table above)
 
 Each install function in `deploy-desktop.sh` is **idempotent** — you can run the script multiple times safely. It checks whether each component is already installed and skips it if so.
 
----
-
-## Contributing
+### Contributing
 
 The main script (`deploy-desktop.sh`) follows these conventions:
 
@@ -408,10 +392,6 @@ The main script (`deploy-desktop.sh`) follows these conventions:
 
 When fixing issues found on a real server, update the repository scripts — not just the remote machine. This ensures future deployments automatically include the fix.
 
----
+### License
 
-## License
-
-Provided as-is for deployment and development use.
-
-**Last Updated:** March 30, 2026
+MIT — see [LICENSE](LICENSE) for the full text.
