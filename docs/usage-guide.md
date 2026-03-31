@@ -9,7 +9,7 @@ This guide assumes you've already deployed the desktop and can connect via RDP. 
 ### From Windows
 
 1. Press **Windows + S** and search for **Remote Desktop Connection**
-2. In the **Computer** field, type your server's IP address (e.g. `204.168.182.32`)
+2. In the **Computer** field, type your server's IP address
 3. Click **Connect**
 4. Enter your Ubuntu username and password when prompted
 5. The GNOME desktop should appear within a few seconds
@@ -18,7 +18,7 @@ This guide assumes you've already deployed the desktop and can connect via RDP. 
 
 ### From Android Tablet
 
-1. Install **Microsoft Remote Desktop** from the Google Play Store
+1. Install **[Microsoft Remote Desktop](https://play.google.com/store/apps/details?id=com.microsoft.rdc.androidx)** from the Google Play Store
 2. Open the app and tap the **+** button
 3. Select **Add PC**
 4. Enter your server's IP address
@@ -51,14 +51,15 @@ Replace `your_api_key_here` with your actual key from [openrouter.ai](https://op
 claude --version      # should print a version number
 code --version        # should print VS Code version
 gh --version          # should print GitHub CLI version
+openclaw --version    # should print OpenCLAW version
 chromium-browser      # should open the browser
 ```
 
 ---
 
-## Using VS Code
+## Using [VS Code](https://code.visualstudio.com/)
 
-VS Code is a full code editor with support for extensions, debugging, and an integrated terminal.
+[VS Code](https://code.visualstudio.com/) is a full code editor with support for extensions, debugging, and an integrated terminal.
 
 **Open it from the desktop** by clicking the VS Code icon, or **from a terminal**:
 
@@ -75,9 +76,9 @@ code myfile.py       # open a single file
 
 ---
 
-## Using Claude Code (AI assistant)
+## Using [Claude Code](https://claude.ai/code) (AI assistant)
 
-Claude Code is an AI coding assistant that runs in the terminal. It can read your code, answer questions, write functions, find bugs, and explain things.
+[Claude Code](https://claude.ai/code) is an AI coding assistant that runs in the terminal. It can read your code, answer questions, write functions, find bugs, and explain things.
 
 **Start an interactive session:**
 ```bash
@@ -105,9 +106,9 @@ claude "what does this codebase do?"
 
 ---
 
-## Using GitHub CLI
+## Using [GitHub CLI](https://cli.github.com/)
 
-GitHub CLI (`gh`) lets you manage your GitHub repositories, pull requests, and issues from the terminal — without needing a browser.
+[GitHub CLI](https://cli.github.com/) (`gh`) lets you manage your GitHub repositories, pull requests, and issues from the terminal — without needing a browser.
 
 **First time: log in to GitHub**
 
@@ -135,9 +136,27 @@ gh issue list                   # see open issues
 
 ---
 
-## Using Chromium Browser
+## Using [OpenCLAW](https://openclaw.app/)
 
-Chromium is the open-source version of Chrome. It works just like Chrome.
+[OpenCLAW](https://openclaw.app/) is installed as a global npm package and lets you connect to remote Discord instances from the terminal.
+
+**Start OpenCLAW:**
+```bash
+openclaw
+```
+
+**Check it is installed:**
+```bash
+openclaw --version
+```
+
+> **Note:** OpenCLAW requires Node.js, which is installed automatically during deployment. If the command is not found, try `source ~/.bashrc` or open a new terminal.
+
+---
+
+## Using [Chromium Browser](https://www.chromium.org/chromium-projects/)
+
+[Chromium](https://www.chromium.org/chromium-projects/) is the open-source version of Chrome. It works just like Chrome.
 
 **Open it from the desktop** by clicking the Chromium icon, or **from a terminal:**
 

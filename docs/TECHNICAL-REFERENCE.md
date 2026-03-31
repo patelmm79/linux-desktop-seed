@@ -221,7 +221,7 @@ Use `/etc/apt/keyrings/` (the modern approach) rather than `apt-key`, which is d
 ## Development Workflow
 
 1. Make changes locally
-2. Test on the dev VM (current test machine: `204.168.182.32`)
+2. Test on a dev VM
 3. Commit with a descriptive message explaining *why* not just *what*
 4. Push to main
 

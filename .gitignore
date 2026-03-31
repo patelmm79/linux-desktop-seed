@@ -1,3 +1,9 @@
 # Worktrees
 .worktrees/
 worktrees/
+
+# Local Claude settings (contains test server IP)
+.claude/settings.local.json
+
+# Local test scripts (contains sensitive server info)
+tests/test-usability.sh

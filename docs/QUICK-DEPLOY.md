@@ -17,8 +17,8 @@ You need:
 
 **Step 1 — Upload the scripts** (run on your local machine):
 ```bash
-git clone https://github.com/patelmm79/desktop-seed.git
-cd desktop-seed
+git clone https://github.com/patelmm79/linux-desktop-seed.git
+cd linux-desktop-seed
 scp deploy-desktop.sh ubuntu@YOUR_SERVER_IP:/tmp/
 scp config.sh ubuntu@YOUR_SERVER_IP:/tmp/
 ```

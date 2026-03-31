@@ -18,6 +18,8 @@ This setup has been validated on a **[Hetzner CPX32](https://www.hetzner.com/clo
 | **Price** | max. $12.59/month ($0.0202/hour) |
 | **Location** | Choice of EU/US datacenters |
 
+> **Tip:** Stop the server when not in use to avoid billing. Hetzner charges hourly, so stopping an idle server saves significant costs.
+
 ### Why This Hardware?
 
 The use case driving this project: running **~6 simultaneous VS Code instances**, each with Claude Code active, while connecting to remote Discord instances via [OpenClaw](https://openclaw.app/) — all through a single RDP session.
@@ -55,6 +57,7 @@ It also handles the painful parts automatically:
 | **Claude Code** | AI coding assistant (terminal-based) | AI pair programmer — run `claude` in any terminal |
 | **OpenRouter CLI** | Access to AI models via API | Lets Claude Code connect to AI models |
 | **Chromium** | Open-source web browser | Full browser available inside the remote desktop |
+| **OpenCLAW** | Remote Discord client | Connects to remote Discord instances from the desktop |
 | **GitHub CLI** | GitHub from the command line | Push/pull repos, manage PRs without browser auth |
 | **GNOME Keyring** | Secure credential/password storage | Prevents "OS keyring not available" errors in VS Code |
 | **Cascade Windows** | Window arrangement extension | Tiles and organizes windows on the desktop |
@@ -78,6 +81,20 @@ Before you start, you need:
 >
 > **Hetzner users:** In your server's Firewall rules, allow TCP port 3389 inbound.
 
+### Security Note: Sudo Access
+
+The deployment script requires `sudo` access and adds a **NOPASSWD** entry to `/etc/sudoers` for the deploying user. This is required because:
+- xrdp runs as the user and needs to configure display settings
+- The session monitor service needs to restart xrdp on crash
+- GNOME keyring needs D-Bus session initialization
+
+**To remove after deployment** (if desired):
+```bash
+sudo visudo
+# Remove the line: username ALL=(ALL) NOPASSWD: ALL
+```
+Then reboot — the desktop will continue to work without sudo access.
+
 ---
 
 ## Quick Start
@@ -87,7 +104,7 @@ Before you start, you need:
 Run this from your local machine (replace `ubuntu` and `YOUR_SERVER_IP` with your values):
 
 ```bash
-git clone https://github.com/patelmm79/desktop-seed.git
+git clone https://github.com/patelmm79/linux-desktop-seed.git
 cd desktop-seed
 
 scp deploy-desktop.sh ubuntu@YOUR_SERVER_IP:/tmp/
@@ -166,6 +183,11 @@ Claude Code reads your codebase and helps you write, debug, and understand code.
 gh auth login   # authenticate with GitHub (first time only)
 gh repo clone owner/repo-name
 gh pr list
+```
+
+### OpenCLAW
+```bash
+openclaw   # connect to remote Discord instances
 ```
 
 ### Chromium Browser

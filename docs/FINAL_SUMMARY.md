@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully diagnosed and resolved the RDP session crash on `204.168.182.32` and implemented a comprehensive system for crash recovery, monitoring, and secure credential storage.
+Successfully diagnosed and resolved the RDP session crash and implemented a comprehensive system for crash recovery, monitoring, and secure credential storage.
 
 ## Problems Solved
 
@@ -83,7 +83,7 @@ Complete guides available:
 
 ### Current System Status
 
-Remote Machine: 204.168.182.32
+Remote Machine: your-server-ip
 - xrdp service: RUNNING ✓
 - Monitor service: RUNNING ✓ (244+ checks)
 - Keyring daemon: READY ✓
@@ -122,17 +122,17 @@ e4e81ed - fix: correct log file paths in analyze-session-logs.sh
 
 ### Health Check (One Command)
 ```bash
-ssh root@204.168.182.32 'bash /tmp/analyze-session-logs.sh --summary'
+ssh root@your-server-ip 'bash /tmp/analyze-session-logs.sh --summary'
 ```
 
 ### Real-Time Monitoring
 ```bash
-ssh root@204.168.182.32 'tail -f /var/log/xrdp/session-monitor.log'
+ssh root@your-server-ip 'tail -f /var/log/xrdp/session-monitor.log'
 ```
 
 ### Crash Analysis
 ```bash
-ssh root@204.168.182.32 'bash /tmp/analyze-session-logs.sh --crashes'
+ssh root@your-server-ip 'bash /tmp/analyze-session-logs.sh --crashes'
 ```
 
 ### Store Credential
