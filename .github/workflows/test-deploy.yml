@@ -7,10 +7,6 @@ on:
       test_vm_ip:
         description: 'Test VM IP Address'
         required: true
-        default: '204.168.182.32'
-      ssh_key:
-        description: 'SSH Private Key (base64 encoded)'
-        required: true
 
   # Run on schedule (weekly)
   schedule:
@@ -47,13 +43,13 @@ jobs:
 
       - name: Setup SSH
         run: |
-          echo "${{ github.event.inputs.ssh_key }}" | base64 -d > ~/.ssh/id_ed25519
+          echo "${{ secrets.SSH_KEY }}" | base64 -d > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           echo "Host test-vm
             HostName ${{ github.event.inputs.test_vm_ip }}
             User root
             IdentityFile ~/.ssh/id_ed25519
-            StrictHostKeyChecking no" >> ~/.ssh/config
+            StrictHostKeyChecking accept-new" >> ~/.ssh/config
 
       - name: Copy deployment script to VM
         run: |
