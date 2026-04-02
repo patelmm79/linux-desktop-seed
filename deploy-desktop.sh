@@ -950,7 +950,24 @@ install_openclaw() {
 install_terraform() {
     log_info "Installing Terraform and Terragrunt..."
 
-    # Install Terraform from HashiCorp repository
+    # First, check/install Terragrunt (always run this)
+    if ! command -v terragrunt &> /dev/null; then
+        log_info "Installing Terragrunt..."
+
+        local terragrunt_version="v0.69.0"
+        if curl -fsSL "https://github.com/gruntwork-io/terragrunt/releases/download/${terragrunt_version}/terragrunt_linux_amd64" -o /usr/local/bin/terragrunt 2>/dev/null; then
+            chmod +x /usr/local/bin/terragrunt
+            log_info "Terragrunt installed successfully"
+        else
+            log_warn "Failed to install Terragrunt"
+        fi
+    else
+        local tg_version
+        tg_version=$(terragrunt --version 2>/dev/null | head -1)
+        log_info "Terragrunt already installed: $tg_version"
+    fi
+
+    # Then check/install Terraform (independent of Terragrunt state)
     if ! command -v terraform &> /dev/null; then
         log_info "Installing Terraform CLI..."
 
@@ -987,24 +1004,6 @@ install_terraform() {
         local tf_version
         tf_version=$(terraform version 2>/dev/null | head -1)
         log_info "Terraform already installed: $tf_version"
-        return 0
-    fi
-
-    # Install Terragrunt
-    if ! command -v terragrunt &> /dev/null; then
-        log_info "Installing Terragrunt..."
-
-        local terragrunt_version="v0.69.0"
-        if curl -fsSL "https://github.com/gruntwork-io/terragrunt/releases/download/${terragrunt_version}/terragrunt_linux_amd64" -o /usr/local/bin/terragrunt 2>/dev/null; then
-            chmod +x /usr/local/bin/terragrunt
-            log_info "Terragrunt installed successfully"
-        else
-            log_warn "Failed to install Terragrunt"
-        fi
-    else
-        local tg_version
-        tg_version=$(terragrunt --version 2>/dev/null | head -1)
-        log_info "Terragrunt already installed: $tg_version"
     fi
 
     return 0
