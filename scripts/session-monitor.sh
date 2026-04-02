@@ -207,6 +207,38 @@ alert() {
 
     # Optional: Send to syslog
     logger -t "xrdp-session-monitor" -p warning "$alert_type: $message"
+
+    # Create GitHub issue for critical alerts
+    local severity="info"
+    case "$alert_type" in
+        HIGH_MEMORY|HIGH_CPU|SERVICE_DOWN)
+            severity="critical"
+            ;;
+        CLEANUP_ORPHAN)
+            severity="warning"
+            ;;
+    esac
+
+    if [[ "$severity" == "critical" ]]; then
+        local body="## Error Details
+- **Type:** $alert_type
+- **Timestamp:** $timestamp
+- **Message:** $message
+
+## System State
+- Memory: $(free -h | grep Mem | awk '{print $3 " used / " $7 " available"})
+- CPU Load: $(uptime | awk -F'load average:' '{print $2}')
+- Uptime: $(uptime -p)
+
+## Log Files
+- Monitor log: \`$MONITOR_LOG\`
+- Alert log: \`$ALERT_LOG\`
+
+## Analysis Notes
+Check system resources and processes."
+
+        create_github_issue "$severity" "$alert_type at $timestamp" "$body" "desktop,auto-detected,$severity"
+    fi
 }
 
 # === GitHub Issue Creation ===
