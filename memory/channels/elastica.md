@@ -48,3 +48,60 @@ Question: Would a quantum-level solution interest architects building elastica a
 
 ### Status
 Quantum: No current utility. Someday-maybe for molecular bridge if project scope expands.
+
+---
+
+## 2026-04-02 — Gaudí / Calatrava Design Use Case
+
+### The Connection
+
+**Gaudí's physical method** = hanging chain models → catenary curves → inverted arches in pure compression
+
+**Calatrava's sculptural method** = physical models of skeletal/bone-like forms → biomorphic structures
+
+**`elastica-milan`** = computational version of Gaudí's chain method
+**`PyElastica`** = extends to Calatrava's dynamic/biomorphic domain
+
+### Combined Workflow
+
+| Tool | Role | Output |
+|---|---|---|
+| `elastica-milan` | Find optimal arch/cantilever form (static equilibrium) | DXF CAD, stress plots, geometry sweep |
+| `PyElastica` | Simulate dynamic behavior (wind, moving loads, seismic) | Video trajectories, Blender visualization |
+
+**Gaudí's process with these tools:**
+1. Define arch geometry → explore hundreds of configurations rapidly
+2. Check stress distribution (bending moment, radius of curvature)
+3. Export DXF → directly into construction CAD
+
+**Calatrava's process:**
+1. Explore cantilever/wicket configurations → find biomorphic structural forms
+2. Drop into PyElastica → simulate dynamic load response
+3. Visualize in Blender → iterate sculptural refinement
+4. Export final geometry
+
+### The Beautiful Irony
+
+Gaudí discovered catenary forms empirically through chains in 1880s.
+Calatrava discovered skeletal forms sculpturally through physical models in 1980s-2000s.
+`elastica-milan` + PyElastica could generate **both** from the same underlying physics.
+
+- **`elastica-milan` finds the form**
+- **`PyElastica` breathes life into it**
+
+### Personas Who Would Find This Useful
+
+| Persona | Why | Use Case |
+|---|---|---|
+| **Structural engineer** | Validate Gaudí-inspired arches for modern construction | Stress analysis, material selection, code compliance |
+| **Architect (Gaudí-inspired)** | Explore organic, nature-derived forms computationally | Generative design, catenary library, DXF export to CAD |
+| **Researcher (Calatrava biomechanics)** | Model skeletal/leaning structures dynamically | Time-domain simulation, environmental loads |
+| **Designer (biomorphic forms)** | Extend sculptural intuition with parametric tools | Iterative form-finding, Blender visualization pipeline |
+| **Educator (structural mechanics)** | Teach catenary physics through interactive tool | Demonstrate Gaudí's method, compare static vs dynamic |
+| **Historical architect researcher** | Reconstruct Gaudí's process computationally | Analyze existing Gaudí structures, compare to predictions |
+
+### Practical Next Steps
+- Generate a library of Gaudí-style catenary arch forms via parameter sweep
+- Validate against known Gaudí geometries (Sagrada Família, Casa Milà)
+- Export shapes to Blender via PyElastica integration for visualization
+- Note: Current `elastica-milan` is quasi-static; PyElastica adds the dynamic layer Gaudí couldn't access

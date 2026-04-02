@@ -100,9 +100,19 @@ Steps in "Deploy to Cloud Run" job:
 2. Need to use `docker/login-action@v3` with proper WIF-compatible configuration
 
 ### Next Steps (Pending)
-1. Try `docker/login-action@v3` with `registry: gcr.io` — but need to verify it can read ADC from `google-github-actions/auth` output
-2. Alternative: Use SA key approach instead of WIF for Docker auth
-3. Need to add `roles/artifactregistry.writer` to `github-actions-deploy` SA on the GCR repository
+1. ~~Need to add `roles/artifactregistry.writer`~~ → COMMAND GIVEN (see below)
+2. Wait ~5 min for IAM propagation
+3. Re-run workflow
+4. If still failing, revert to `docker/login-action` with explicit token + `export_credentials: true`
+
+### Command to Fix (run in Cloud Shell)
+```bash
+gcloud artifacts repositories add-iam-policy-binding gcr.io \
+  --project=globalbiting-dev \
+  --member="serviceAccount:github-actions-deploy@globalbiting-dev.iam.gserviceaccount.com" \
+  --role="roles/artifactregistry.writer" \
+  --condition=None
+```
 
 ### GitHub Run History (recent failures)
 - `697a308` fix(ci): use gcloud auth configure-docker — FAILURE (current)
