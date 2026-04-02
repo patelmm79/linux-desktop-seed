@@ -587,6 +587,24 @@ run_test() {
 
 # === Main ===
 
+# Daemon mode - run monitoring loop (used by systemd)
+run_daemon() {
+    # Source configuration
+    if [ -f /var/lib/xrdp/session-monitor-config.sh ]; then
+        source /var/lib/xrdp/session-monitor-config.sh
+    fi
+
+    init_logs
+
+    while true; do
+        monitor_active_sessions
+        monitor_crash_logs
+        cleanup_orphaned_sessions
+        generate_report
+        sleep 30
+    done
+}
+
 case "${1:-}" in
     --enable)
         install_service
@@ -596,6 +614,13 @@ case "${1:-}" in
         ;;
     --test)
         run_test
+        ;;
+    --daemon)
+        run_daemon
+        ;;
+    "")
+        # No arguments - run as daemon (for systemd)
+        run_daemon
         ;;
     *)
         echo "Usage: sudo bash scripts/session-monitor.sh [--enable|--disable|--test]"
