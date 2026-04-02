@@ -65,6 +65,16 @@ COMPONENTS[bun_name]="Bun"
 COMPONENTS[bun_check]="command -v bun &> /dev/null"
 COMPONENTS[bun_required]="false"
 
+# Terraform (IaC tool)
+COMPONENTS[terraform_name]="Terraform"
+COMPONENTS[terraform_check]="command -v terraform &> /dev/null"
+COMPONENTS[terraform_required]="false"
+
+# Terragrunt (Terraform wrapper)
+COMPONENTS[terragrunt_name]="Terragrunt"
+COMPONENTS[terragrunt_check]="command -v terragrunt &> /dev/null"
+COMPONENTS[terragrunt_required]="false"
+
 # OpenCLAW AI client
 COMPONENTS[openclaw_name]="OpenCLAW"
 COMPONENTS[openclaw_check]="command -v openclaw &> /dev/null"
