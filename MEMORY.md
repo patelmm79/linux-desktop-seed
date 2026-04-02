@@ -68,8 +68,8 @@ These override any default behavior. I follow these every session.
 |------|-------|
 | `GlobalBitings` | Dish-first restaurant discovery. Active. See `memory/2026-04-01.md` |
 | `bond-nexus` | Has CLAUDE.md — not yet explored |
-| `dev-nexus` | Has CLAUDE.md — not yet explored |
-| `dev-nexus-frontend` | Has CLAUDE.md — not yet explored |
+| `dev-nexus` | FastAPI A2A backend for Pattern Discovery Agent System |
+| `dev-nexus-frontend` | React+TS frontend. Active — Readiness Dashboard, Build New Project. See `memory/channels/dev-nexus-frontend.md` |
 | `elastica` | Has CLAUDE.md — not yet explored |
 | `gcp-postgres-terraform` | Has CLAUDE.md — not yet explored |
 | `_backup_gcp_postgres` | Backup, no CLAUDE.md |
@@ -86,6 +86,12 @@ These override any default behavior. I follow these every session.
 - 22,726 restaurants seeded across 5 cities
 - Blog extraction pipeline built (needs testing)
 - FastAPI backend running on port 8000
+
+### `#dev-nexus-frontend` (2026-04-02)
+**Full detail:** `memory/channels/dev-nexus-frontend.md`
+- React+TS frontend for Pattern Discovery Agent System
+- Recent work: Readiness Dashboard, Build New Project page, user preferences/API keys
+- Repo clean, backend not running locally
 
 ### `topic-1488635028702232816` — largest session (764K)
 **Not yet reviewed.** Full summary not captured. Check session transcript for details.
