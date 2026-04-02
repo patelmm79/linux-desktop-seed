@@ -450,6 +450,8 @@ copy_desktop_configs() {
     if [[ -d /root/Desktop ]]; then
         cp -r /root/Desktop "$user_home/" 2>/dev/null || true
         chown -R "$username:$username" "$user_home/Desktop" 2>/dev/null || true
+        # Fix execute permissions - GNOME shows red X on files without +x
+        chmod +x "$user_home/Desktop"/* 2>/dev/null || true
     fi
 
     # Copy Claude config
@@ -490,6 +492,19 @@ Hidden=true
 X-GNOME-Autostart-enabled=true
 EOF
     chown "$username:$username" "$user_home/.config/autostart/unlock-keyring.desktop"
+
+    # Create desktop permission fixer - ensures all desktop files have +x (prevents red X)
+    # This runs on every session start as a defensive measure
+    mkdir -p "$user_home/.config/autostart"
+    cat > "$user_home/.config/autostart/fix-desktop-permissions.desktop" << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=Fix Desktop Permissions
+Exec=bash -c 'chmod +x "$HOME/Desktop"/* 2>/dev/null || true'
+Hidden=true
+X-GNOME-Autostart-enabled=true
+EOF
+    chown "$username:$username" "$user_home/.config/autostart/fix-desktop-permissions.desktop"
 
     log_info "Desktop configurations copied to $username"
 }
@@ -1128,6 +1143,30 @@ setup_monitoring() {
     fi
 }
 
+# Setup GitHub Issues integration
+setup_github_issues() {
+    log_info "Setting up GitHub Issues integration..."
+
+    # Check if gh is installed
+    if ! command -v gh &> /dev/null; then
+        log_warn "GitHub CLI (gh) not installed - GitHub Issues disabled"
+        return 0
+    fi
+
+    # Check if authenticated
+    if ! gh auth status &> /dev/null; then
+        log_warn "GitHub not authenticated - run 'gh auth login' to enable issues"
+        log_info "  To enable GitHub Issues:"
+        log_info "    1. Run: gh auth login"
+        log_info "    2. Set environment variables:"
+        log_info "       export GITHUB_REPO='username/desktop-seed'"
+        log_info "       export AUTO_ISSUE_ENABLED=true"
+        return 0
+    fi
+
+    log_info "GitHub CLI configured - issues can be enabled via environment variables"
+}
+
 setup_gnome_extensions() {
     log_info "Setting up GNOME extensions..."
 
@@ -1334,6 +1373,7 @@ main() {
     create_desktop_shortcuts
     setup_keyring
     setup_monitoring
+    setup_github_issues
     setup_gnome_extensions
     validate_deployment
     show_summary
