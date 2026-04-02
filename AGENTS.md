@@ -63,6 +63,30 @@ After any meaningful work in any channel → update the relevant `memory/channel
 - `trash` > `rm` (recoverable beats gone forever)
 - When in doubt, ask.
 
+## Cloud / Deployed Project Debugging (Non-Negotiable)
+
+When debugging an issue on a **cloud-deployed** service (Cloud Run, GCP, etc.):
+
+**Step 1 — Check git push status FIRST:**
+```bash
+git status
+git log --oneline origin/main..HEAD   # shows unpushed commits
+```
+If this shows commits not on origin → push before debugging anything else.
+
+**Step 2 — Run pytest:**
+```bash
+pytest tests/ -v
+```
+Don't assume local changes work just because they look right.
+
+**Step 3 — Then verify the deployment:**
+- Cloud Build triggers on GitHub push → check GCP Console → Cloud Build → Builds
+- If Cloud Build is old/stale, the deployed image is old code
+- After pushing, confirm the build completes and the new commit hash appears in Cloud Build logs
+
+**Root cause of most "it doesn't work" reports:** local commits that were never pushed to origin.
+
 ## External vs Internal
 
 **Safe to do freely:**
