@@ -63,66 +63,24 @@ Last 8 commits (2026-03-25 to 2026-04-02):
 **Context:** The `patelmm79/dev-nexus` GitHub Actions → GCP workflow federation is broken. Build succeeds but GCR push fails.
 
 ### Current Status (2026-04-02)
-- Build: ✅ succeeds
-- GCR push: ❌ fails — `gcloud auth configure-docker gcr.io` can't refresh tokens
+- Terraform apply: ✅ completed — `serviceAccountTokenCreator` now bound from WIF pool → SA
+- GCR repo permission: ✅ applied
+- Workflow: pending re-run after ~5 min propagation
 
-### Error
-```
-ERROR: (gcloud.auth.docker-helper) There was a problem refreshing your current auth tokens:
-('Unable to acquire impersonated credentials', 'Permission 'iam.serviceAccounts.getAccessToken' denied on resource (or it may not exist)')
-```
-Then: `denied: Unauthenticated request. artifactregistry.repositories.uploadArtifacts`
+### Working Auth Strategy (Final)
+Two-step auth in workflow:
+1. `auth-token`: `token_format: access_token` → for `docker/login-action` with `username: oauth2accesstoken`
+2. `auth-creds`: `export_credentials: true` → SA key file → for gcloud/Terraform
 
-### What Was Tried (from Claude Code session)
-1. Initial WIF setup had binding backwards: `cloudbuild SA → serviceAccountTokenCreator on github-actions-deploy` (wrong direction)
-2. Found this project's Cloud Build uses Default Compute SA: `665374072631-compute@developer.gserviceaccount.com` (no dedicated Cloud Build SA exists)
-3. Set `github-actions-deploy` → `serviceAccountTokenCreator` on Compute SA (for Cloud Build impersonation)
-4. Set `github-actions-deploy` → `serviceAccountTokenCreator` on itself (self-impersonation for GCR auth)
-5. Tried `docker/login-action@v3` → didn't work with WIF credentials directly
-6. Tried `gcloud auth configure-docker gcr.io` → fails with impersonation error
+Both steps need `serviceAccountTokenCreator` on WIF pool → SA (added via Terraform).
 
-### GitHub Actions Workflow (deploy-production.yml)
-Steps in "Deploy to Cloud Run" job:
-1. `google-github-actions/auth` — authenticates as `github-actions-deploy@globalbiting-dev.iam.gserviceaccount.com` via WIF
-2. `setup-gcloud` — sets up gcloud with those credentials
-3. `gcloud auth configure-docker gcr.io` — FAILS here (current blocker)
-4. `docker build + push` — skipped because step 3's error doesn't stop the step, but push fails
-5. `terraform apply` — not reached
+### Key Findings (Hard Lessons)
+1. **principalSet:// bindings MUST use Terraform SA-level binding** — gcloud CLI rejects this format at both project and SA levels
+2. **docker/login-action requires explicit credentials** — must use `username: oauth2accesstoken` + `password: ${{ steps.auth.outputs.access_token }}`
+3. **Every approach needs serviceAccountTokenCreator** — even minimal WIF (no flags) fails because gcloud refresh requires it
+4. **GCR repo ACLs are separate from project IAM** — need `artifactregistry.writer` on the repository resource specifically
+5. **IAM bindings take ~5 min to propagate**
 
-### Key Bindings on `github-actions-deploy@globalbiting-dev.iam.gserviceaccount.com`
-- `serviceAccountTokenCreator` on `github-actions-deploy` (self) — for minting tokens
-- `serviceAccountTokenCreator` on `665374072631-compute@developer.gserviceaccount.com` — for Cloud Build
-- `roles/iam.workloadIdentityUser` via WIF pool
-
-### Root Cause Hypothesis
-`gcloud auth configure-docker gcr.io` tries to refresh OAuth2 tokens for GCR. For WIF credentials to work with GCR, either:
-1. The SA needs `serviceAccountTokenCreator` on itself AND the GCR repo permissions, OR
-2. Need to use `docker/login-action@v3` with proper WIF-compatible configuration
-
-### Next Steps (Pending)
-1. ~~Need to add `roles/artifactregistry.writer`~~ → COMMAND GIVEN (see below)
-2. Wait ~5 min for IAM propagation
-3. Re-run workflow
-4. If still failing, revert to `docker/login-action` with explicit token + `export_credentials: true`
-
-### Command to Fix (run in Cloud Shell)
-```bash
-gcloud artifacts repositories add-iam-policy-binding gcr.io \
-  --project=globalbiting-dev \
-  --member="serviceAccount:github-actions-deploy@globalbiting-dev.iam.gserviceaccount.com" \
-  --role="roles/artifactregistry.writer" \
-  --condition=None
-```
-
-### GitHub Run History (recent failures)
-- `697a308` fix(ci): use gcloud auth configure-docker — FAILURE (current)
-- `66a77d5` ci: docker/login-action reads ADC — FAILURE
-- `23915428740` Deploy to Production (manual) — FAILURE
-- `23915426866` ci: docker/login-action with access_token — FAILURE
-
-### Lessons Learned (To Be Documented)
-- WIF credential chain for GCR push is complex — multiple impersonation hops may be needed
-- `gcloud auth configure-docker` with WIF doesn't work out of the box
-- `docker/login-action@v3` with GCR has its own requirements
-- Project has no dedicated Cloud Build SA — uses Default Compute SA
-- IAM bindings with conditions require `--condition=None` flag
+### Docs Updated
+- `docs/DEPLOYMENT_LESSONS_LEARNED.md` — fully updated
+- `docs/github-actions-wif-setup.md` — corrected principalSet → Terraform only
