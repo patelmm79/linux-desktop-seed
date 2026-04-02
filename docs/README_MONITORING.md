@@ -32,6 +32,45 @@ bash scripts/analyze-session-logs.sh --timeline
 
 ---
 
+## GitHub Issues Integration
+
+The monitor can automatically create GitHub issues when critical errors occur, so you get notified and I can analyze problems.
+
+### Enable GitHub Issues
+
+1. Set environment variables in the systemd service:
+```bash
+sudo systemctl edit xrdp-session-monitor.service
+```
+
+Add under `[Service]`:
+```ini
+Environment="GITHUB_REPO=username/repo"
+Environment="GITHUB_TOKEN=ghp_xxxx"
+Environment="AUTO_ISSUE_ENABLED=true"
+```
+
+2. Restart the service:
+```bash
+sudo systemctl restart xrdp-session-monitor.service
+```
+
+### What Creates Issues
+
+| Event | Severity | Labels |
+|-------|----------|--------|
+| Session crash (segfault) | critical | desktop, auto-detected, critical |
+| Memory critical (>80%) | critical | desktop, auto-detected, critical |
+| CPU critical (>75%) | critical | desktop, auto-detected, critical |
+
+### Using Issues
+
+- Issues appear in your GitHub repo automatically
+- I can see them and analyze patterns over time
+- Each issue includes: error details, system state, log file paths, suggested fixes
+
+---
+
 ## Real-Time Monitoring
 
 ```bash
