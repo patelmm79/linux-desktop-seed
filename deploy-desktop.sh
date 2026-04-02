@@ -956,8 +956,10 @@ install_terraform() {
 
         # Add HashiCorp GPG key
         if [ ! -f /usr/share/keyrings/hashicorp-archive-keyring.gpg ]; then
-            curl -fsSL https://apt.releases.hashicorp.com/gpg 2>/dev/null | \
-                gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg 2>/dev/null || true
+            if ! curl -fsSL https://apt.releases.hashicorp.com/gpg 2>/dev/null | \
+                gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg 2>/dev/null; then
+                log_warn "Failed to add HashiCorp GPG key (continuing anyway)"
+            fi
         fi
 
         # Add HashiCorp repository
@@ -985,6 +987,7 @@ install_terraform() {
         local tf_version
         tf_version=$(terraform version 2>/dev/null | head -1)
         log_info "Terraform already installed: $tf_version"
+        return 0
     fi
 
     # Install Terragrunt
