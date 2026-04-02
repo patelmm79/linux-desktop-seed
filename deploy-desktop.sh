@@ -946,6 +946,65 @@ install_openclaw() {
     fi
 }
 
+# Install Terraform and Terragrunt
+install_terraform() {
+    log_info "Installing Terraform and Terragrunt..."
+
+    # Install Terraform from HashiCorp repository
+    if ! command -v terraform &> /dev/null; then
+        log_info "Installing Terraform CLI..."
+
+        # Add HashiCorp GPG key
+        if [ ! -f /usr/share/keyrings/hashicorp-archive-keyring.gpg ]; then
+            curl -fsSL https://apt.releases.hashicorp.com/gpg 2>/dev/null | \
+                gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg 2>/dev/null || true
+        fi
+
+        # Add HashiCorp repository
+        if [ ! -f /etc/apt/sources.list.d/hashicorp.list ]; then
+            echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" > \
+                /etc/apt/sources.list.d/hashicorp.list
+        fi
+
+        # Install Terraform
+        if apt-get update -qq 2>/dev/null && apt-get install -y -qq terraform 2>/dev/null; then
+            log_info "Terraform installed successfully"
+        else
+            log_warn "Failed to install Terraform from repo, trying direct download..."
+            # Fallback: direct download
+            if curl -fsSL https://releases.hashicorp.com/terraform/1.7.5/terraform_1.7.5_linux_amd64.zip -o /tmp/terraform.zip 2>/dev/null && \
+               unzip -o /tmp/terraform.zip -d /usr/local/bin/ 2>/dev/null; then
+                chmod +x /usr/local/bin/terraform
+                rm -f /tmp/terraform.zip
+                log_info "Terraform installed via direct download"
+            else
+                log_error "Failed to install Terraform"
+            fi
+        fi
+    else
+        local tf_version
+        tf_version=$(terraform version 2>/dev/null | head -1)
+        log_info "Terraform already installed: $tf_version"
+    fi
+
+    # Install Terragrunt
+    if ! command -v terragrunt &> /dev/null; then
+        log_info "Installing Terragrunt..."
+
+        local terragrunt_version="v0.69.0"
+        if curl -fsSL "https://github.com/gruntwork-io/terragrunt/releases/download/${terragrunt_version}/terragrunt_linux_amd64" -o /usr/local/bin/terragrunt 2>/dev/null; then
+            chmod +x /usr/local/bin/terragrunt
+            log_info "Terragrunt installed successfully"
+        else
+            log_warn "Failed to install Terragrunt"
+        fi
+    else
+        local tg_version
+        tg_version=$(terragrunt --version 2>/dev/null | head -1)
+        log_info "Terragrunt already installed: $tg_version"
+    fi
+}
+
 # Set up environment variables and system-wide configuration
 setup_environment() {
     log_info "Setting up environment variables..."
@@ -1339,6 +1398,7 @@ main() {
         log_info "  - GitHub CLI"
         log_info "  - Bun runtime"
         log_info "  - OpenCLAW"
+        log_info "  - Terraform & Terragrunt"
         log_info "  - Session monitoring"
         log_info "  - GNOME extensions"
         echo ""
@@ -1368,6 +1428,7 @@ main() {
     install_ghcli
     install_bun
     install_openclaw
+    install_terraform
     setup_environment
     configure_mcp_servers
     create_desktop_shortcuts
