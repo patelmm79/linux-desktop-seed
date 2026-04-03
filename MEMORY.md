@@ -87,6 +87,14 @@ These override any default behavior. I follow these every session.
 - Blog extraction pipeline built (needs testing)
 - FastAPI backend running on port 8000
 
+### `dev-nexus` Backend — GCP State Issues
+
+**Critical finding (2026-04-03):** The Terraform state in GCS (`gs://globalbiting-dev-terraform-state/dev-nexus/prod/`) is severely out of sync with actual GCP resources. All postgres, WIF, and secret resources already exist in GCP but are missing or have wrong addresses in Terraform state. A full `terraform apply` will fail with 409 conflicts because it tries to create resources that already exist.
+
+**Current workaround:** The `terraform-apply.yml` workflow now uses `gcloud run services add-iam-policy-binding` directly instead of Terraform for IAM changes, bypassing the broken state.
+
+**Next step:** The Terraform state needs a full reconciliation. Options: (1) use `terraform import` + `terraform apply -refresh-only` to properly sync state, or (2) rebuild state from scratch using `terraform import` for all existing resources.
+
 ### `#dev-nexus-frontend` (2026-04-02)
 **Full detail:** `memory/channels/dev-nexus-frontend.md`
 - React+TS frontend for Pattern Discovery Agent System
