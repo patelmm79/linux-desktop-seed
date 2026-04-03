@@ -87,6 +87,14 @@ These override any default behavior. I follow these every session.
 - Blog extraction pipeline built (needs testing)
 - FastAPI backend running on port 8000
 
+### `dev-nexus` Backend
+
+**Backend URL:** `https://pattern-discovery-agent-75l7mntama-uc.a.run.app` — live, public, PostgreSQL connected (as of 2026-04-03)
+**Frontend URL:** `https://dev-nexus-frontend.vercel.app` — live
+**GitHub OAuth:** Flow fixed (state via URL, no cookies), FRONTEND_URL set, redirect_uri fixed.
+
+**Terraform state: out of sync** — full `terraform apply` will fail (409 conflicts). Deploy workflow bypasses Terraform entirely using direct `gcloud run deploy`.
+
 ### `dev-nexus` Backend — GCP State Issues
 
 **Critical finding (2026-04-03):** The Terraform state in GCS (`gs://globalbiting-dev-terraform-state/dev-nexus/prod/`) is severely out of sync with actual GCP resources. All postgres, WIF, and secret resources already exist in GCP but are missing or have wrong addresses in Terraform state. A full `terraform apply` will fail with 409 conflicts because it tries to create resources that already exist.

@@ -17,10 +17,14 @@ Pattern Discovery Agent System frontend — React + TypeScript app connecting to
 
 **Backend repo:** `~/GithubProjects/dev-nexus/` — FastAPI A2A server
 
-## Current State (as of 2026-04-02)
-- Working tree clean, no uncommitted changes
-- Backend not running locally (localhost:8080)
-- No active cron jobs or background tasks for this project
+## Current State (as of 2026-04-03)
+- Frontend: `https://dev-nexus-frontend.vercel.app` — live
+- Backend: `https://pattern-discovery-agent-75l7mntama-uc.a.run.app` — live, public, PostgreSQL connected
+- GitHub OAuth: flow fixed (state via URL, no cookies)
+- Frontend `.env.production` API URL fixed to correct backend URL
+- Vercel dashboard `VITE_API_BASE_URL` may override local `.env.production` — check dashboard if issues recur
+- CORS on backend: `dev-nexus-frontend\.vercel\.app`
+- Deploy workflow: gcloud-based, working end-to-end
 
 ## Recent Work (from git log)
 Last 8 commits (2026-03-25 to 2026-04-02):
@@ -47,7 +51,7 @@ Last 8 commits (2026-03-25 to 2026-04-02):
 
 ## Connection
 - Local dev: `VITE_API_BASE_URL=http://localhost:8080`
-- Production: `https://pattern-discovery-agent-665374072631.us-central1.run.app`
+- Production: `https://pattern-discovery-agent-75l7mntama-uc.a.run.app` (was incorrectly `665374072631.us-central1.run.app`)
 
 ## Documentation
 - `docs/CODING_STANDARDS.md` — coding standards
@@ -58,29 +62,12 @@ Last 8 commits (2026-03-25 to 2026-04-02):
 
 ---
 
-## Related: dev-nexus Backend (GitHub Actions → GCP WIF Federation)
+## Related: dev-nexus Backend
 
-**Context:** The `patelmm79/dev-nexus` GitHub Actions → GCP workflow federation is broken. Build succeeds but GCR push fails.
+**Status (2026-04-03):** Backend fully operational. Terraform state is out of sync but deploy workflow bypasses Terraform entirely with direct `gcloud run deploy`.
 
-### Current Status (2026-04-02)
-- Terraform apply: ✅ completed — `serviceAccountTokenCreator` now bound from WIF pool → SA
-- GCR repo permission: ✅ applied
-- Workflow: pending re-run after ~5 min propagation
+**Key issue resolved:** CSRF state cookie was being stripped by Cloud Run's Google Frontend proxy. Solution: pass CSRF state in URL (GitHub passes it back unchanged through OAuth redirect chain).
 
-### Working Auth Strategy (Final)
-Two-step auth in workflow:
-1. `auth-token`: `token_format: access_token` → for `docker/login-action` with `username: oauth2accesstoken`
-2. `auth-creds`: `export_credentials: true` → SA key file → for gcloud/Terraform
-
-Both steps need `serviceAccountTokenCreator` on WIF pool → SA (added via Terraform).
-
-### Key Findings (Hard Lessons)
-1. **principalSet:// bindings MUST use Terraform SA-level binding** — gcloud CLI rejects this format at both project and SA levels
-2. **docker/login-action requires explicit credentials** — must use `username: oauth2accesstoken` + `password: ${{ steps.auth.outputs.access_token }}`
-3. **Every approach needs serviceAccountTokenCreator** — even minimal WIF (no flags) fails because gcloud refresh requires it
-4. **GCR repo ACLs are separate from project IAM** — need `artifactregistry.writer` on the repository resource specifically
-5. **IAM bindings take ~5 min to propagate**
-
-### Docs Updated
-- `docs/DEPLOYMENT_LESSONS_LEARNED.md` — fully updated
-- `docs/github-actions-wif-setup.md` — corrected principalSet → Terraform only
+**Known issues:**
+- Terraform state severely out of sync — full `terraform apply` will fail (409 conflicts on existing resources)
+- PostgreSQL VM managed by Terraform, state desync means postgres VM changes can't be applied via Terraform
