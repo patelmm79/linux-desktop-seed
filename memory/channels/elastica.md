@@ -105,3 +105,31 @@ Calatrava discovered skeletal forms sculpturally through physical models in 1980
 - Validate against known Gaudí geometries (Sagrada Família, Casa Milà)
 - Export shapes to Blender via PyElastica integration for visualization
 - Note: Current `elastica-milan` is quasi-static; PyElastica adds the dynamic layer Gaudí couldn't access
+
+---
+
+## 2026-04-04 — DNA Module Documentation Update
+
+### What was added
+- **Architectural bridge explanation** at top of `app/pages/3_DNA_Mechanics.py`:
+  - Table mapping macroscopic elastica ↔ DNA nanoscale equivalents
+  - Explanation of the unit conversion layer (persistence length as bending modulus)
+  - Connection to Gaudí's catenary method and Calatrava's biomorphic method
+- **Gaudí use case** — static DNA loop form-finding workflow:
+  - Define geometry → parameter sweep → SVG/CSV export → validate
+  - Gap: no DNA-specific sweep presets, no SVG/DXF export
+- **Calatrava use case** — dynamic/biomorphic simulation workflow:
+  - Find equilibrium form → PyElastica for time-domain → Blender viz → CAD
+  - Gap: static-only, no PyElastica bridge, no time-domain, no Blender pipeline
+- **Known limitations expander** — full list of gaps documented in-page
+
+### Commits (test branch)
+- `631e0aa` feat(dna): add DNA mechanics module — WLC, buckling, looping, supercoiling, packaging
+- `1361f8b` docs(dna): add architectural bridge explanation, Gaudí/Calatrava use cases, and gaps doc
+
+### Git state (elastica on test branch)
+631e0aa feat(dna): add DNA mechanics module — WLC, buckling, looping, supercoiling, packaging
+1361f8b docs(dna): add architectural bridge explanation, Gaudí/Calatrava use cases, and gaps doc
+904eff4 fix: health check now calls health() fn, checks Streamlit _stcore/health, fixes src/auth.py port 8081→PORT env var
+
+Note: About to append Gaudí/Calatrava sections to USER_PERSONA_ANALYSIS.md
