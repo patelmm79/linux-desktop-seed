@@ -137,3 +137,72 @@ Note: About to append Gaudí/Calatrava sections to USER_PERSONA_ANALYSIS.md
   - Gaudí: elastica static solver is whole workflow; linear FEA/CAD can't substitute
   - Calatrava: Layer 1 (static) = this app; Layer 2 (dynamic) = PyElastica, not in app
   - Summary table: what elastica uniquely provides per persona vs. gaps
+
+---
+
+## 2026-04-04 — Buckling Indicator + Named Presets + Inextensibility Toggle
+
+### What was built
+
+**Buckling indicator** (structural engineer — brings to ~95%):
+- `compute.buckling_indicator()`: Euler P_cr = π²EI/L² for pinned-pinned
+- Shows buckling ratio (applied/P_cr), Euler P_cr, α/α_limit as metrics
+- Color-coded alert: 🚨buckled / ⚠️warning / ℹ️caution / ✓safe
+- Appears immediately after Summary Table in engineering results
+
+**Named presets** (architect — brings to ~90%):
+- `compute.list_presets/save_preset/delete_preset/preset_to_params`: JSON at `output/data/presets.json`
+- Sidebar preset manager: save current {arclength, press, height, width, load, material, model, note, alpha} with a custom name
+- Load/delete any saved preset from dropdown; shows L/δ/h/w summary on selection
+- Full round-trip: save → load → values populate in sidebar
+
+**Inextensibility toggle** (structural engineer):
+- Advanced parameters expander: "Inextensible beam (constant length)" checkbox (default True)
+- If unchecked, shows caption warning that extensible behaviour is not implemented
+
+### Commit
+- `f2787ce` feat(ui): add buckling indicator, named presets, and inextensibility toggle
+
+---
+
+## 2026-04-04 — Persona Lobby Pages
+
+### What was built
+- `pages/7_Architect.py` — DXF export, shape exploration, named presets workflow. Mobile: centered, 2-col caps, one CTA.
+- `pages/8_Structural_Engineer.py` — buckling ratio + Euler P_cr + safety status table (buckled/warning/caution/safe). 
+- `pages/9_Biophysicist.py` — DNA form selector, 4 problem types (looping/supercoiling/viral/WLC), nm/pN explanation.
+- `pages/10_Gaudi.py` — catenary method explanation, why-not-linear-FEA, arch design tips.
+- `pages/0_Welcome.py` — 2x2 persona card grid (accessible from sidebar nav).
+- `ui_streamlit.py` — collapsible persona selector banner at top of main app (4 buttons, navigates to lobby via st.switch_page).
+
+### Mobile strategy
+- `layout="centered"` on all lobby pages
+- 2-column grid for capability pills
+- Workflow as 3-4 compact bullets (not paragraphs)
+- Single prominent CTA button
+- Minimal sections — designed to fit in one viewport
+
+### Commit
+- `1f53ceb` feat(pages): add persona lobby pages — Architect, Engineer, Biophysicist, Gaudí
+
+---
+
+## 2026-04-04 — Deployed to elastica-app-test Cloud Run
+
+### Test deployment URL
+**https://elastica-app-test-75l7mntama-uc.a.run.app**
+
+### What was done
+- Authenticated as `build-monitor@globalbiting-dev.iam.gserviceaccount.com` on the VM
+- Built Docker image: `us-central1-docker.pkg.dev/globalbiting-dev/elastica-app/elastica-app:test-6790358`
+- Pushed using OAuth2 access token (workaround: `sudo Docker_CONFIG=/tmp/docker_try2 docker push`)
+- Deployed to existing `elastica-app-test` Cloud Run service with `--no-traffic`
+- Routed 100% traffic to new revision
+
+### VM gcloud tools setup
+- gcloud SDK: `/home/desktopuser/bin/google-cloud-sdk/` (pre-installed)
+- `sudo docker-credential-gcloud` wrapper at `/usr/local/bin/` pointing to original path
+- `sudo Docker_CONFIG=/tmp/docker_try2` with OAuth2 token for GCR auth
+
+### Commit pushed
+- `6790358` chore: set Welcome page as default root URL (still on test branch)
