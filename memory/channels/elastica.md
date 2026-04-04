@@ -133,3 +133,7 @@ Calatrava discovered skeletal forms sculpturally through physical models in 1980
 904eff4 fix: health check now calls health() fn, checks Streamlit _stcore/health, fixes src/auth.py port 8081→PORT env var
 
 Note: About to append Gaudí/Calatrava sections to USER_PERSONA_ANALYSIS.md
+- `81c178a` docs(persona): add Gaudí and Calatrava sub-personas with elastica essentialness mapping
+  - Gaudí: elastica static solver is whole workflow; linear FEA/CAD can't substitute
+  - Calatrava: Layer 1 (static) = this app; Layer 2 (dynamic) = PyElastica, not in app
+  - Summary table: what elastica uniquely provides per persona vs. gaps
