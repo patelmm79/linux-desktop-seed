@@ -193,6 +193,12 @@ install_gnome() {
         sed -i 's/^Exec=nautilus --new-window/Exec=env DISPLAY=:16 nautilus --new-window/' /usr/share/applications/org.gnome.Nautilus.desktop
         log_info "Fixed nautilus desktop entry for xrdp"
     fi
+
+    # Fix text editor desktop entry for xrdp display
+    if [[ -f /usr/share/applications/org.gnome.TextEditor.desktop ]]; then
+        sed -i 's/^Exec=gnome-text-editor/Exec=env DISPLAY=:16 gnome-text-editor/' /usr/share/applications/org.gnome.TextEditor.desktop
+        log_info "Fixed text editor desktop entry for xrdp"
+    fi
 }
 
 # Fix X server wrapper configuration
