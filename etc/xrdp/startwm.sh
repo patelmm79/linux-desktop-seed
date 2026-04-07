@@ -38,5 +38,9 @@ if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]; then
 fi
 echo "DBUS=$DBUS_SESSION_BUS_ADDRESS" >> ~/.xsession-errors
 
+# Note: DPI/scaling must be configured AFTER gnome-shell starts, not before
+# User can manually run: gsettings set org.gnome.desktop.interface text-scaling-factor 1.5
+# Or configure via GNOME Settings → Accessibility → Text Size
+
 # Start gnome-shell directly (bypasses gnome-session which has issues with xrdp)
 exec nohup gnome-shell >> ~/.xsession-errors 2>&1

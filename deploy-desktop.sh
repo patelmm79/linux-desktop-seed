@@ -187,6 +187,12 @@ install_gnome() {
     fi
 
     log_info "GNOME Desktop installed successfully"
+
+    # Fix nautilus desktop entry for xrdp display
+    if [[ -f /usr/share/applications/org.gnome.Nautilus.desktop ]]; then
+        sed -i 's/^Exec=nautilus --new-window/Exec=env DISPLAY=:16 nautilus --new-window/' /usr/share/applications/org.gnome.Nautilus.desktop
+        log_info "Fixed nautilus desktop entry for xrdp"
+    fi
 }
 
 # Fix X server wrapper configuration
@@ -305,13 +311,21 @@ export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 export GNOME_SHELL_SESSION_MODE=ubuntu
 export GNOME_SHELL_WAYLANDRESTART=false
 
-echo "DISPLAY=$DISPLAY, GDK_BACKEND=$GDK_BACKEND" >> ~/.xsession-errors
+# Force scaling for high-DPI RDP displays
+export GDK_SCALE=2
+export GTK_SCALE=2
+
+echo "DISPLAY=$DISPLAY, GDK_BACKEND=$GDK_BACKEND, GDK_SCALE=$GDK_SCALE" >> ~/.xsession-errors
 
 # Start D-Bus session if not already running
 if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]; then
     eval $(dbus-launch --sh-syntax)
 fi
 echo "DBUS=$DBUS_SESSION_BUS_ADDRESS" >> ~/.xsession-errors
+
+# Note: DPI/scaling must be configured AFTER gnome-shell starts, not before
+# User can manually run: gsettings set org.gnome.desktop.interface text-scaling-factor 1.5
+# Or configure via GNOME Settings → Accessibility → Text Size
 
 # Start gnome-shell directly (bypasses gnome-session which has issues with xrdp)
 exec nohup gnome-shell >> ~/.xsession-errors 2>&1
@@ -343,7 +357,7 @@ xvnc_section = """[Xvnc]
 type=Xvnc
 param=-bs
 param=-dpi
-param=96
+param=144
 """
 
 # Replace existing [Xvnc] section
@@ -399,6 +413,21 @@ PYSCRIPT
     # Configure firewall (if ufw is active)
     if command -v ufw &> /dev/null; then
         ufw allow 3389/tcp comment "Allow RDP" 2>/dev/null || log_warn "Could not configure firewall"
+    fi
+
+    # Configure Xresources for DPI scaling on RDP sessions
+    if [ -d /etc/xrdp ]; then
+        cat > /etc/xrdp/Xresources << 'XRES'
+! Set default DPI for xrdp sessions to fix small text/icons
+Xft.dpi: 144
+Xft.autohint: 0
+Xft.lcdfilter:  lcddefault
+Xft.hinting: 1
+Xft.hintstyle:  hintslight
+Xft.antialias: 1
+Xft.rgba: rgb
+XRES
+        log_info "Configured Xresources for DPI scaling"
     fi
 
     log_info "xrdp configured successfully"
@@ -1237,23 +1266,45 @@ setup_openclaw_config() {
 
     OPENCLAW_CONFIG_DIR="$HOME/.openclaw"
     OPENCLAW_CONFIG_FILE="$OPENCLAW_CONFIG_DIR/openclaw.json"
+    DEFAULTS_FILE="config/openclaw-defaults.json"
 
     # Create config directory if it doesn't exist
     mkdir -p "$OPENCLAW_CONFIG_DIR"
     chmod 700 "$OPENCLAW_CONFIG_DIR"
 
-    # Copy default config from repo
-    if [ -f "config/openclaw-defaults.json" ]; then
-        cp config/openclaw-defaults.json "$OPENCLAW_CONFIG_FILE"
-        chmod 600 "$OPENCLAW_CONFIG_FILE"
-        log_info "OpenCLAW configured from defaults"
-    else
+    # Check if defaults file exists
+    if [ ! -f "$DEFAULTS_FILE" ]; then
         log_warn "OpenCLAW defaults not found - skipping config"
         return 0
     fi
 
-    chmod 600 "$OPENCLAW_CONFIG_FILE"
-    log_info "OpenCLAW configured with optimized settings"
+    # If no existing config, copy defaults
+    if [ ! -f "$OPENCLAW_CONFIG_FILE" ]; then
+        cp "$DEFAULTS_FILE" "$OPENCLAW_CONFIG_FILE"
+        chmod 600 "$OPENCLAW_CONFIG_FILE"
+        log_info "OpenCLAW configured from defaults (new install)"
+    else
+        # Existing config found - merge with defaults preserving channels
+        log_info "Merging OpenCLAW config with existing settings..."
+
+        # Use jq to merge configs, keeping existing channels if they exist
+        if command -v jq &> /dev/null; then
+            # Merge agents, messages, commands sections from defaults
+            # Preserve existing channels and gateway settings
+            jq -s '.[0] * .[1]' "$OPENCLAW_CONFIG_FILE" "$DEFAULTS_FILE" > "$OPENCLAW_CONFIG_FILE.tmp" 2>/dev/null && \
+                mv "$OPENCLAW_CONFIG_FILE.tmp" "$OPENCLAW_CONFIG_FILE" || \
+                cp "$DEFAULTS_FILE" "$OPENCLAW_CONFIG_FILE"
+            log_info "OpenCLAW config merged with defaults"
+        else
+            # If jq not available, backup existing and use defaults
+            cp "$OPENCLAW_CONFIG_FILE" "$OPENCLAW_CONFIG_FILE.backup.$(date +%Y%m%d)"
+            cp "$DEFAULTS_FILE" "$OPENCLAW_CONFIG_FILE"
+            log_warn "jq not available - backed up existing config and used defaults"
+        fi
+        chmod 600 "$OPENCLAW_CONFIG_FILE"
+    fi
+
+    log_info "OpenCLAW configuration complete"
 }
 
 # Setup GitHub Issues integration
@@ -1287,6 +1338,14 @@ setup_gnome_extensions() {
     if ! command -v gnome-shell &> /dev/null; then
         log_info "Installing GNOME Shell extensions package..."
         apt-get install -y -qq gnome-shell-extensions 2>&1 | tee -a "$LOG_FILE" || true
+    fi
+
+    # Disable problematic extensions for RDP sessions
+    # The 'ding' (Desktop Icons NG) extension crashes with file-roller in xrdp sessions
+    if [ -d "/usr/share/gnome-shell/extensions/ding@rastersoft.com" ]; then
+        log_info "Disabling problematic ding extension for RDP compatibility..."
+        mv /usr/share/gnome-shell/extensions/ding@rastersoft.com \
+           /usr/share/gnome-shell/extensions/ding@rastersoft.com.disabled 2>/dev/null || true
     fi
 
     # Install Cascade Windows extension (UUID: cascade-windows@fthx)
