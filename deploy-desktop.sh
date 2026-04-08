@@ -496,6 +496,17 @@ copy_desktop_configs() {
         chown -R "$username:$username" "$user_home/.config/claude" 2>/dev/null || true
     fi
 
+    # Copy OpenCLAW wrapper and symlink
+    if [[ -f /root/.local/bin/openclaw ]]; then
+        mkdir -p "$user_home/.local/bin"
+        cp /root/.local/bin/openclaw "$user_home/.local/bin/" 2>/dev/null || true
+        chown -R "$username:$username" "$user_home/.local" 2>/dev/null || true
+        chmod +x "$user_home/.local/bin/openclaw" 2>/dev/null || true
+    fi
+    if [[ -L /usr/local/bin/openclaw ]]; then
+        ln -sf /root/.local/bin/openclaw /usr/local/bin/openclaw 2>/dev/null || true
+    fi
+
     # Copy MCP config
     if [[ -d /root/.config/desktop-seed ]]; then
         mkdir -p "$user_home/.config/desktop-seed"
@@ -654,7 +665,8 @@ configure_claude_openrouter() {
         cat > ~/.config/claude/settings.json << EOF
 {
   "apiKey": "$api_key",
-  "apiUrl": "https://openrouter.ai/api/v1"
+  "apiUrl": "https://openrouter.ai/api/v1",
+  "httpTitle": "desktop-seed"
 }
 EOF
         log_info "API key configured in settings.json"
@@ -662,7 +674,8 @@ EOF
         cat > ~/.config/claude/settings.json << 'EOF'
 {
   "apiKey": "",
-  "apiUrl": "https://openrouter.ai/api/v1"
+  "apiUrl": "https://openrouter.ai/api/v1",
+  "httpTitle": "desktop-seed"
 }
 EOF
     fi
@@ -687,7 +700,149 @@ EOF
         log_info "Added OpenRouter environment to ~/.bashrc"
     fi
 
+    # Create wrapper script for dynamic per-repo OpenRouter billing
+    # This detects the current git repo and sets httpTitle accordingly
+    cat > ~/.local/bin/claude << 'WRAPPER'
+#!/bin/bash
+# Claude Code wrapper for dynamic OpenRouter billing by repo
+
+# Detect git repo name from current directory
+REPO_NAME=""
+if git rev-parse --git-dir >/dev/null 2>&1; then
+    # Get repo name from git remote or directory
+    REPO_NAME=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null)
+fi
+
+# Fallback to hostname if not in a git repo
+if [[ -z "$REPO_NAME" ]]; then
+    REPO_NAME="${HOSTNAME:-desktop}"
+fi
+
+# Update settings.json with dynamic httpTitle
+SETTINGS_FILE="$HOME/.config/claude/settings.json"
+if [[ -f "$SETTINGS_FILE" ]]; then
+    # Use python3 for reliable JSON manipulation
+    if command -v python3 >/dev/null 2>&1; then
+        python3 -c "
+import json
+import os
+settings_file = os.path.expanduser('$HOME/.config/claude/settings.json')
+with open(settings_file, 'r') as f:
+    settings = json.load(f)
+settings['httpTitle'] = '$REPO_NAME'
+with open(settings_file, 'w') as f:
+    json.dump(settings, f, indent=2)
+"
+    fi
+fi
+
+# Execute actual Claude Code
+if command -v /usr/bin/claude >/dev/null 2>&1; then
+    exec /usr/bin/claude "$@"
+elif command -v claude >/dev/null 2>&1; then
+    exec claude "$@"
+else
+    echo "Error: Claude Code not found" >&2
+    exit 1
+fi
+WRAPPER
+    chmod +x ~/.local/bin/claude
+    log_info "Created dynamic repo-aware Claude wrapper at ~/.local/bin/claude"
+
+    # Add ~/.local/bin to PATH in .bashrc if not present
+    if ! grep -q '~/.local/bin' ~/.bashrc 2>/dev/null; then
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+        log_info "Added ~/.local/bin to PATH"
+    fi
+
     log_info "Claude Code OpenRouter configuration complete"
+}
+
+# Setup OpenCLAW wrapper for per-repo OpenRouter billing
+setup_openclaw_wrapper() {
+    log_info "Setting up OpenCLAW wrapper for dynamic billing..."
+
+    # Check if OpenCLAW is installed
+    if ! command -v openclaw &> /dev/null; then
+        log_warn "OpenCLAW not installed - skipping wrapper"
+        return 0
+    fi
+
+    # Create wrapper script for dynamic per-repo OpenRouter billing for OpenCLAW
+    # This detects the current git repo and sets HTTP-Referer/X-Title headers
+    cat > ~/.local/bin/openclaw << 'WRAPPER'
+#!/bin/bash
+# OpenCLAW wrapper for dynamic OpenRouter billing by repo
+
+# Detect git repo name from current directory
+REPO_NAME=""
+if git rev-parse --git-dir >/dev/null 2>&1; then
+    REPO_NAME=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null)
+fi
+
+# Fallback to hostname if not in a git repo
+if [[ -z "$REPO_NAME" ]]; then
+    REPO_NAME="${HOSTNAME:-openclaw}"
+fi
+
+# Build referer URL based on repo
+REFERER="https://github.com/patelmm79/${REPO_NAME}"
+
+# Update OpenCLAW config with dynamic headers
+OPENCLAW_CONFIG="$HOME/.openclaw/openclaw.json"
+if [[ -f "$OPENCLAW_CONFIG" ]] && command -v python3 >/dev/null 2>&1; then
+    python3 -c "
+import json
+import os
+
+config_file = os.path.expanduser('$OPENCLAW_CONFIG')
+with open(config_file, 'r') as f:
+    config = json.load(f)
+
+# Ensure models section exists
+if 'models' not in config:
+    config['models'] = {'mode': 'merge', 'providers': {}}
+if 'providers' not in config['models']:
+    config['models']['providers'] = {}
+
+# Set OpenRouter provider with dynamic headers
+config['models']['providers']['openrouter'] = {
+    'apiKey': {'source': 'env', 'id': 'OPENROUTER_API_KEY'},
+    'headers': {
+        'HTTP-Referer': '$REFERER',
+        'X-Title': '$REPO_NAME'
+    }
+}
+
+with open(config_file, 'w') as f:
+    json.dump(config, f, indent=2)
+"
+fi
+
+# Execute actual OpenCLAW
+if command -v /usr/bin/openclaw >/dev/null 2>&1; then
+    exec /usr/bin/openclaw "$@"
+elif command -v openclaw >/dev/null 2>&1; then
+    exec openclaw "$@"
+else
+    echo "Error: OpenCLAW not found" >&2
+    exit 1
+fi
+WRAPPER
+    chmod +x ~/.local/bin/openclaw
+    log_info "Created dynamic repo-aware OpenCLAW wrapper at ~/.local/bin/openclaw"
+
+    # Also create symlink in /usr/local/bin for system-wide access
+    ln -sf ~/.local/bin/openclaw /usr/local/bin/openclaw 2>/dev/null || true
+    log_info "Symlinked wrapper to /usr/local/bin for PATH access"
+
+    # Add ~/.local/bin to PATH in .bashrc if not present
+    if ! grep -q '~/.local/bin' ~/.bashrc 2>/dev/null; then
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+        log_info "Added ~/.local/bin to PATH"
+    fi
+
+    log_info "OpenCLAW wrapper setup complete"
 }
 
 # Install OpenRouter CLI
@@ -1042,6 +1197,64 @@ install_terraform() {
     fi
 
     return 0
+}
+
+# Install Google Cloud CLI (gcloud)
+install_gcloud() {
+    log_info "Installing Google Cloud SDK..."
+
+    # Check if gcloud is already properly installed and working
+    if command -v gcloud &> /dev/null && gcloud version &> /dev/null; then
+        local gcloud_version
+        gcloud_version=$(gcloud version 2>/dev/null | head -1)
+        log_info "Google Cloud SDK already installed: $gcloud_version"
+        return 0
+    fi
+
+    # Remove broken gcloud installation if present
+    if [ -f /usr/local/bin/gcloud ]; then
+        # Check if it's the broken stub installer that doesn't work
+        if ! /usr/local/bin/gcloud version &> /dev/null; then
+            log_info "Removing broken gcloud installation..."
+            rm -f /usr/local/bin/gcloud
+        fi
+    fi
+
+    # Add Google Cloud SDK repository
+    log_info "Adding Google Cloud SDK repository..."
+    # Download and add Google Cloud GPG key
+    if ! curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg 2>/dev/null | \
+        gpg --dearmor -o /usr/share/keyrings/gcloud-keyring.gpg 2>/dev/null; then
+        log_warn "Failed to add Google Cloud GPG key"
+    fi
+
+    # Add repository to sources (overwrite if exists, as it may be malformed)
+    echo "deb [signed-by=/usr/share/keyrings/gcloud-keyring.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | \
+        tee /etc/apt/sources.list.d/google-cloud-sdk.list > /dev/null
+    log_info "Google Cloud SDK repository added"
+
+    # Update package lists
+    if ! apt-get update -y 2>&1 | grep -q "Err\|Failed"; then
+        log_info "Package lists updated"
+    else
+        log_warn "Some package update warnings occurred"
+    fi
+
+    # Install Google Cloud SDK
+    if ! apt-get install -y google-cloud-sdk 2>&1; then
+        log_error "Failed to install Google Cloud SDK"
+        return 1
+    fi
+
+    # Verify installation
+    if command -v gcloud &> /dev/null && gcloud version &> /dev/null; then
+        local gcloud_version
+        gcloud_version=$(gcloud version 2>/dev/null | head -1)
+        log_info "Google Cloud SDK installed successfully: $gcloud_version"
+    else
+        log_error "Google Cloud SDK installed but 'gcloud' command not working"
+        return 1
+    fi
 }
 
 # Set up environment variables and system-wide configuration
@@ -1518,6 +1731,7 @@ main() {
         log_info "  - Bun runtime"
         log_info "  - OpenCLAW"
         log_info "  - Terraform & Terragrunt"
+        log_info "  - Google Cloud SDK"
         log_info "  - Session monitoring"
         log_info "  - GNOME extensions"
         echo ""
@@ -1547,7 +1761,9 @@ main() {
     install_ghcli
     install_bun
     install_openclaw
+    setup_openclaw_wrapper
     install_terraform
+    install_gcloud
     setup_environment
     configure_mcp_servers
     create_desktop_shortcuts

@@ -24,9 +24,11 @@
       "Bash(cat:*)",
       "WebSearch",
       "Bash(ls -la *.md)",
-      "Bash(\\\\\n# Move deployment/implementation docs to docs folder\nmv DEPLOYMENT_SUMMARY.md docs/DEPLOYMENT_SUMMARY.md 2>/dev/null || true && \\\\\nmv INTEGRATION_GUIDE.md docs/INTEGRATION_GUIDE.md 2>/dev/null || true && \\\\\nmv FINAL_SUMMARY.md docs/FINAL_SUMMARY.md 2>/dev/null || true && \\\\\nmv DEPLOYMENT-GUIDE.md docs/DEPLOYMENT-GUIDE.md 2>/dev/null || true && \\\\\nmv RDP-FIX-SUMMARY.md docs/RDP-FIX-SUMMARY.md 2>/dev/null || true && \\\\\nmv README_MONITORING.md docs/README_MONITORING.md 2>/dev/null || true && \\\\\nmv QUICK-DEPLOY.md docs/QUICK-DEPLOY.md 2>/dev/null || true && \\\\\necho \"Files moved to docs/\" && \\\\\nls -1 docs/*.md | sort)",
+      "Bash(\\\\n# Move deployment/implementation docs to docs folder\nmv DEPLOYMENT_SUMMARY.md docs/DEPLOYMENT_SUMMARY.md 2>/dev/null || true && \\\\\nmv INTEGRATION_GUIDE.md docs/INTEGRATION_GUIDE.md 2>/dev/null || true && \\\\\nmv FINAL_SUMMARY.md docs/FINAL_SUMMARY.md 2>/dev/null || true && \\\\\nmv DEPLOYMENT-GUIDE.md docs/DEPLOYMENT-GUIDE.md 2>/dev/null || true && \\\\\nmv RDP-FIX-SUMMARY.md docs/RDP-FIX-SUMMARY.md 2>/dev/null || true && \\\\\nmv README_MONITORING.md docs/README_MONITORING.md 2>/dev/null || true && \\\\\nmv QUICK-DEPLOY.md docs/QUICK-DEPLOY.md 2>/dev/null || true && \\\\\necho \"Files moved to docs/\" && \\\\\nls -1 docs/*.md | sort)",
       "Skill(commit-commands:commit-push-pr)",
-      "Bash(gh pr:*)"
+      "Bash(gh pr:*)",
+      "Bash(xargs grep:*)",
+      "Bash(scp:*)"
     ]
   }
 }

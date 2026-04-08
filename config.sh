@@ -80,6 +80,11 @@ COMPONENTS[openclaw_name]="OpenCLAW"
 COMPONENTS[openclaw_check]="command -v openclaw &> /dev/null"
 COMPONENTS[openclaw_required]="false"
 
+# Google Cloud SDK
+COMPONENTS[gcloud_name]="Google Cloud SDK"
+COMPONENTS[gcloud_check]="command -v gcloud &> /dev/null"
+COMPONENTS[gcloud_required]="false"
+
 # Get list of component keys
 get_component_keys() {
     local keys=()

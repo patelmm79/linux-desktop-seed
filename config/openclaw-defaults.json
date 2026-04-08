@@ -20,7 +20,7 @@
         "reserveTokens": 20000,
         "keepRecentTokens": 4000,
         "reserveTokensFloor": 20000,
-        "maxHistoryShare": 0.1
+        "maxHistoryShare": 0.02
       },
       "maxConcurrent": 4,
       "subagents": {

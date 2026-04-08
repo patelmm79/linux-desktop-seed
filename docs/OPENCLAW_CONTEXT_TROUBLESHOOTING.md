@@ -52,7 +52,7 @@ To prevent this, increase your compaction buffer by setting agents.defaults.comp
     "mode": "default",
     "reserveTokens": 20000,
     "reserveTokensFloor": 20000,
-    "maxHistoryShare": 0.1,
+    "maxHistoryShare": 0.05,
     "keepRecentTokens": 4000
   }
 }
