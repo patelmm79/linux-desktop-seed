@@ -18,7 +18,7 @@
     }
   },
   "environment": {
-    "DISCORD_WEBHOOK_URL": "Discord webhook URL for notifications",
-    "DISCORD_CHANNEL_ID": "1491175562348331209"
+    "DISCORD_CHANNEL_ID": "1491175562348331209",
+    "OPENCLAW_REQUIRED": "true"
   }
 }

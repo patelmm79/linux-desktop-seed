@@ -135,6 +135,7 @@ sudo systemctl restart xrdp-session-monitor.service
 | `scripts/session-monitor.sh` | Monitoring service | ~400 |
 | `scripts/analyze-session-logs.sh` | Analysis tools | ~300 |
 | `scripts/cleanup-sessions.sh` | Session cleanup (cron) | ~100 |
+| `scripts/deploy-repo-to-vm.sh` | Repository deployment skill | ~100 |
 | `config/openclaw-defaults.json` | OpenCLAW defaults | - |
 | `tests/validate-install.sh` | Deployment validation | ~150 |
 
