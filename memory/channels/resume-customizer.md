@@ -1,27 +1,32 @@
 # resume-customizer channel memory
-Last updated: 2026-04-04
+Last updated: 2026-04-08
 
 ## Project
 - LangGraph multi-agent resume customization app
 - Deployed: https://resume-customizer-665374072631.us-central1.run.app (Cloud Run)
 - Repo: patelmm79/resume-customizer
-- Orchestrator: V2WorkflowOrchestrator (workflow/orchestrator_v2.py)
-- Latest commit: f8f0e2e "add: skills_review_page.py test runner for rendering from saved state"
-- Previous commit: ac31f93 "fix: auto-select use cases in confirm_skills_review when career_use_cases exists"
 
-## Recent work
-- Fix: confirm_skills_review was calling gap_analyzer without running use_case_selector first → use_case_score all 0
-- Fix applied: auto-select from career_use_cases when selected_use_cases is empty (automated workflow)
-- Live LLM test passed: 14 gap_analysis entries, 23 alignment_matrix rows, PDF generated (394K)
-- Still: use_case_score=0 in single checkpoint mode (confirm_skills_review fix not reached)
+## Status: ✅ Use case 0% bug FIXED (2026-04-08)
+- Root cause: V2UseCaseSelector.__init__ called get_agent_llm_client() at object-init time,
+  falling back to gemini (invalid API key) in non-Streamlit env
+- Fix: get LLM client at node call-time inside v2_use_case_selector_node
+- Additional fixes: is not None checks, comprehensive fallback for LLM failures, parser fixes
+- OpenRouter added as provider with anthropic/claude-3.5-haiku (fast, cheap ~$0.25/M tokens)
+- Verified 2026-04-08: 7/7 skills have non-zero use_case_score (40%-90%)
 
-## Test files
-- tests/skills_review_page.py: standalone Streamlit page to render Skills Review from saved state
-- tests/live_llm_test.py: full programmatic e2e with real LLM (Claude)
-- Saved states: /tmp/skills_state*.json (full, with_uc, confirmed variants)
+## Latest commits
+- 50b4fe4 feat: add OpenRouter provider with Claude Haiku support
+- bd1a9b2 Fix use case selector cr...
+- (many intermediate fixes from 2026-04-05)
+- 5a92d3e fix: chart fallback for missing importance_rank
+
+## OpenRouter Setup
+- Key: stored in .env as OPENROUTER_API_KEY
+- Model: anthropic/claude-3.5-haiku (default)
+- App defaults to openrouter via .settings.json
 
 ## Architecture notes
 - V2 workflow: job_analysis → priority_ranking → skills_review → section_adaptation → validation → PDF
-- Skills review runs: top_skills_extractor → gap_analyzer → alignment_matrix_node
-- PDF export via export_pdf_node → utils/pdf_exporter.py
+- Skills review: top_skills_extractor → gap_analyzer (with selected_use_cases) → alignment_matrix
+- Gap analyzer scores: work_experience_score (from resume) + use_case_score (from career use cases)
 - Cloud Build: cloudbuild.yaml triggers on push to main
