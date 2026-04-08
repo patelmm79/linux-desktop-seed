@@ -7,3 +7,9 @@ worktrees/
 
 # Local test scripts (contains sensitive server info)
 tests/test-usability.sh
+
+# Environment files (never commit secrets)
+.env
+.env.local
+.env.*.local
+*.env

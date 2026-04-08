@@ -1276,6 +1276,13 @@ export VISUAL=gedit
 # Desktop environment hints
 export XDG_CURRENT_DESKTOP=GNOME
 export XDG_SESSION_TYPE=x11
+
+# Source user environment file if it exists
+if [ -f "$HOME/.config/desktop-seed/.env" ]; then
+    set -a
+    source "$HOME/.config/desktop-seed/.env"
+    set +a
+fi
 EOF
 
     # Make it executable
@@ -1523,7 +1530,74 @@ setup_openclaw_config() {
         chmod 600 "$OPENCLAW_CONFIG_FILE"
     fi
 
+    # Populate Discord allowlist from environment variable if set
+    if [ -n "${DISCORD_ALLOWLIST_IDS:-}" ]; then
+        log_info "Populating Discord allowlist from environment..."
+        # Convert comma-separated IDs to JSON array
+        ALLOWLIST_JSON=$(echo "$DISCORD_ALLOWLIST_IDS" | tr ',' '\n' | jq -R . | jq -s .)
+        # Update the config with the allowlist
+        if command -v jq &> /dev/null; then
+            jq --argjson allowlist "$ALLOWLIST_JSON" '.channels.discord.allowlist = $allowlist' "$OPENCLAW_CONFIG_FILE" > "$OPENCLAW_CONFIG_FILE.tmp" && \
+                mv "$OPENCLAW_CONFIG_FILE.tmp" "$OPENCLAW_CONFIG_FILE"
+            log_info "Discord allowlist populated with $(echo "$DISCORD_ALLOWLIST_IDS" | tr ',' '\n' | wc -l) users"
+        fi
+    else
+        log_warn "DISCORD_ALLOWLIST_IDS not set — bot will reject all users until configured"
+    fi
+
+    # Create audit log directory
+    local audit_log_dir="/var/log/openclaw"
+    if [ ! -d "$audit_log_dir" ]; then
+        mkdir -p "$audit_log_dir"
+        chmod 750 "$audit_log_dir"
+        log_info "Audit log directory created at $audit_log_dir"
+    fi
+
     log_info "OpenCLAW configuration complete"
+}
+
+# Setup token rotation cron job
+setup_token_rotation_cron() {
+    log_info "Setting up token rotation reminder cron..."
+
+    local script_path="$HOME/.local/bin/check-token-age.sh"
+
+    # Create script directory if needed
+    mkdir -p "$(dirname "$script_path")"
+
+    # Copy script to user's local bin
+    if [ -f "scripts/check-token-age.sh" ]; then
+        cp "scripts/check-token-age.sh" "$script_path"
+        chmod +x "$script_path"
+        log_info "Token age check script installed"
+    else
+        log_warn "Token age check script not found, skipping cron setup"
+        return 0
+    fi
+
+    # Create token ages file if it doesn't exist
+    local token_ages_file="$HOME/.config/desktop-seed/token-ages.json"
+    mkdir -p "$(dirname "$token_ages_file")"
+
+    if [ ! -f "$token_ages_file" ]; then
+        cat > "$token_ages_file" << EOF
+{
+  "openrouter_api_key": "$(date +%Y-%m-%d)",
+  "discord_bot_token": "$(date +%Y-%m-%d)",
+  "discord_cve_webhook_url": "$(date +%Y-%m-%d)"
+}
+EOF
+        log_info "Token ages tracking file created"
+    fi
+
+    # Add cron job if not already present
+    local cron_job="0 9 * * 1 $script_path"
+    if ! crontab -l 2>/dev/null | grep -q "check-token-age.sh"; then
+        (crontab -l 2>/dev/null; echo "$cron_job") | crontab -
+        log_info "Token rotation cron job added (every Monday at 9 AM)"
+    else
+        log_info "Token rotation cron job already exists"
+    fi
 }
 
 # Setup GitHub Issues integration
@@ -1770,6 +1844,7 @@ main() {
     setup_keyring
     setup_monitoring
     setup_openclaw_config
+    setup_token_rotation_cron
     setup_github_issues
     setup_gnome_extensions
     validate_deployment

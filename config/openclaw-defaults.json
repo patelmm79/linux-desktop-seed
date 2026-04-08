@@ -20,12 +20,38 @@
         "reserveTokens": 20000,
         "keepRecentTokens": 4000,
         "reserveTokensFloor": 20000,
-        "maxHistoryShare": 0.02
+        "maxHistoryShare": 0.02,
+        "metricsExport": {
+          "enabled": true,
+          "db": "~/.openclaw/cost-log.db",
+          "table": "compaction_events"
+        }
       },
       "maxConcurrent": 4,
       "subagents": {
         "maxConcurrent": 4
-      }
+      },
+      "costLimits": {
+        "perRequestUSD": 0.10,
+        "perHourUSD": 2.00,
+        "perDayUSD": 10.00,
+        "action": "pause"
+      },
+      "rateLimit": {
+        "requestsPerMinute": 20,
+        "tokensPerMinute": 100000
+      },
+      "timeout": {
+        "responseSeconds": 120,
+        "fallbackModel": "openrouter/openai/gpt-4o-mini"
+      },
+      "fallback": {
+        "onError": "openrouter/openai/gpt-4o-mini",
+        "onTimeout": "openrouter/openai/gpt-4o-mini",
+        "onCostLimit": "pause",
+        "maxFallbackAttempts": 2
+      },
+      "systemPrompt": "config/mental-seal-prompt.txt"
     }
   },
   "messages": {
@@ -40,12 +66,20 @@
   "channels": {
     "discord": {
       "enabled": true,
-      "token": "REPLACE_WITH_DISCORD_BOT_TOKEN",
-      "groupPolicy": "open",
+      "token": { "source": "env", "id": "DISCORD_BOT_TOKEN" },
+      "groupPolicy": "allowlist",
+      "allowlist": [],
       "streaming": true
     }
   },
   "gateway": {
     "mode": "local"
+  },
+  "audit": {
+    "enabled": true,
+    "logFile": "/var/log/openclaw/audit.log",
+    "logLevel": "info",
+    "events": ["message.received", "message.sent", "agent.start", "agent.complete", "agent.error", "tool.call", "cost.limit.hit", "auth.denied"],
+    "rotation": { "maxSizeMB": 50, "keepDays": 30 }
   }
 }

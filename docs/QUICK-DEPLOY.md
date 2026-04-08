@@ -39,13 +39,23 @@ Wait 5–15 minutes. You'll see progress messages. When it finishes, you're read
 
 ## After Connecting
 
-Set your OpenRouter API key so Claude Code works:
+Set your API keys using the environment file (never commit this file!):
 
 ```bash
-echo 'export OPENROUTER_API_KEY="your_api_key_here"' >> ~/.bashrc
-source ~/.bashrc
+# Create your environment file from the template
+cp .env.example ~/.config/desktop-seed/.env
+
+# Edit with your actual API keys
+nano ~/.config/desktop-seed/.env
+
+# Source the environment variables
+set -a && source ~/.config/desktop-seed/.env && set +a
+
+# Verify Claude Code works
 claude --version   # should print a version number
 ```
+
+> **⚠️ WARNING:** Never commit `.env` to version control! It's already in `.gitignore`.
 
 ---
 

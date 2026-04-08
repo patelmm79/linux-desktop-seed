@@ -18,7 +18,7 @@
     }
   },
   "environment": {
-    "DISCORD_CHANNEL_ID": "1491175562348331209",
+    "DISCORD_CHANNEL_ID": "${DISCORD_CHANNEL_ID}",
     "OPENCLAW_REQUIRED": "true"
   }
 }

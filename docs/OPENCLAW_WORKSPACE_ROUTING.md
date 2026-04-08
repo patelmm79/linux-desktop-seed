@@ -186,180 +186,49 @@ ls -la ~/.openclaw/agents/
 cat ~/.openclaw/agents/alpha/agent/auth-profiles.json | jq '.profiles'
 ```
 
-### Script: Add New Repo
+### Using the Script
 
-Here's a convenience script to add a new repo with its own API key:
+A convenience script is provided at `scripts/add-openclaw-repo.sh`:
 
 ```bash
-#!/bin/bash
-# add-openclaw-repo.sh - Add a new repo with dedicated OpenRouter key
+# Copy to your server
+scp scripts/add-openclaw-repo.sh user@server:/tmp/
 
-set -euo pipefail
-
-# Defaults
-DEFAULT_REPO_PATH="$HOME/Projects"
-
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-usage() {
-    echo "Usage: $0 <repo-name> [options]"
-    echo ""
-    echo "Arguments:"
-    echo "  repo-name           Name of the repo (used as agent ID)"
-    echo ""
-    echo "Options:"
-    echo "  -k, --api-key      OpenRouter API key (required)"
-    echo "  -p, --path         Repo path (default: ~/Projects/<repo-name>)"
-    echo "  -c, --channel      Discord channel ID or name"
-    echo "  -h, --help         Show this help"
-    exit 1
-}
-
-# Parse arguments
-REPO_NAME=""
-API_KEY=""
-REPO_PATH=""
-CHANNEL=""
-
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        -k|--api-key)
-            API_KEY="$2"
-            shift 2
-            ;;
-        -p|--path)
-            REPO_PATH="$2"
-            shift 2
-            ;;
-        -c|--channel)
-            CHANNEL="$2"
-            shift 2
-            ;;
-        -h|--help)
-            usage
-            ;;
-        *)
-            REPO_NAME="$1"
-            shift
-            ;;
-    esac
-done
-
-# Validate required args
-if [[ -z "$REPO_NAME" ]]; then
-    echo -e "${RED}Error: repo-name is required${NC}"
-    usage
-fi
-
-if [[ -z "$API_KEY" ]]; then
-    echo -e "${RED}Error: OpenRouter API key is required (use -k or --api-key)${NC}"
-    usage
-fi
-
-# Default repo path
-if [[ -z "$REPO_PATH" ]]; then
-    REPO_PATH="$DEFAULT_REPO_PATH/$REPO_NAME"
-fi
-
-echo -e "${GREEN}Adding repo: $REPO_NAME${NC}"
-echo "  Path: $REPO_PATH"
-
-# Check for existing Discord channel
-if [[ -z "$CHANNEL" ]]; then
-    echo -e "${YELLOW}Checking for existing Discord channel named '$REPO_NAME'...${NC}"
-    
-    # Try to find channel from existing config
-    EXISTING_CHANNEL=$(jq -r '.channels.discord.guilds[].channels | to_entries[] | select(.key | contains("'"$REPO_NAME"'")) | .key' ~/.openclaw/openclaw.json 2>/dev/null | head -1 || true)
-    
-    if [[ -n "$EXISTING_CHANNEL" ]]; then
-        CHANNEL="$EXISTING_CHANNEL"
-        echo -e "${GREEN}Found existing channel: $CHANNEL${NC}"
-    else
-        echo -e "${YELLOW}No channel found matching '$REPO_NAME'${NC}"
-        echo ""
-        echo "Please create a Discord channel for this repo, then provide the channel ID:"
-        echo "  1. Enable Developer Mode in Discord (Settings → Advanced → Developer Mode)"
-        echo "  2. Right-click the channel → Copy Channel ID"
-        echo ""
-        read -p "Enter Discord channel ID: " CHANNEL
-        
-        if [[ -z "$CHANNEL" ]]; then
-            echo -e "${RED}Error: channel ID is required${NC}"
-            exit 1
-        fi
-    fi
-fi
-
-# Extract accountId from channel (channel ID format)
-ACCOUNT_ID="$CHANNEL"
-
-echo "  Channel: $ACCOUNT_ID"
-
-# Create agent directory structure
-echo -e "${GREEN}Creating agent '$REPO_NAME'...${NC}"
-mkdir -p ~/.openclaw/agents/$REPO_NAME/agent
-mkdir -p ~/.openclaw/agents/$REPO_NAME/sessions
-
-# Create auth-profiles.json
-cat > ~/.openclaw/agents/$REPO_NAME/agent/auth-profiles.json << EOF
-{
-  "version": 1,
-  "profiles": {
-    "openrouter:default": {
-      "type": "api_key",
-      "provider": "openrouter",
-      "key": "$API_KEY"
-    }
-  }
-}
-EOF
-chmod 600 ~/.openclaw/agents/$REPO_NAME/agent/auth-profiles.json
-
-# Copy models.json from main agent
-if [[ -f ~/.openclaw/agents/main/agent/models.json ]]; then
-    cp ~/.openclaw/agents/main/agent/models.json ~/.openclaw/agents/$REPO_NAME/agent/
-fi
-
-# Add binding to config
-echo -e "${GREEN}Adding binding to config...${NC}"
-
-# Check if bindings exist
-if jq -e '.bindings' ~/.openclaw/openclaw.json >/dev/null 2>&1; then
-    jq --arg agent "$REPO_NAME" --arg channel "$ACCOUNT_ID" --arg path "$REPO_PATH" --arg name "$REPO_NAME" \
-        '.bindings += [{"type": "route", "agentId": $agent, "match": {"channel": "discord", "accountId": $channel}, "workspace": $path, "workspaceName": $name}]' \
-        ~/.openclaw/openclaw.json > /tmp/openclaw.json.tmp
-else
-    jq --arg agent "$REPO_NAME" --arg channel "$ACCOUNT_ID" --arg path "$REPO_PATH" --arg name "$REPO_NAME" \
-        '. + {"bindings": [{"type": "route", "agentId": $agent, "match": {"channel": "discord", "accountId": $channel}, "workspace": $path, "workspaceName": $name}]}' \
-        ~/.openclaw/openclaw.json > /tmp/openclaw.json.tmp
-fi
-mv /tmp/openclaw.json.tmp ~/.openclaw/openclaw.json
-
-# Restart OpenCLAW
-echo -e "${GREEN}Restarting OpenCLAW...${NC}"
-openclaw daemon restart
-
-echo ""
-echo -e "${GREEN}Done! Repo '$REPO_NAME' has been configured.${NC}"
-echo ""
-echo "Bindings:"
-jq ".bindings" ~/.openclaw/openclaw.json
+# Make executable
+ssh user@server "chmod +x /tmp/add-openclaw-repo.sh"
 ```
 
-Usage:
-```bash
-chmod +x add-openclaw-repo.sh
+**Usage:**
 
-# Minimal usage (will prompt for channel)
+```bash
+# Minimal (will prompt for channel if not found)
 ./add-openclaw-repo.sh my-repo -k "sk-or-v2-..."
 
-# Full usage
-./add-openclaw-repo.sh my-repo -k "sk-or-v2-..." -p /home/user/Projects/my-repo -c "123456789012345678"
+# Full options
+./add-openclaw-repo.sh my-repo -k "sk-or-v2-..." -c "123456789012345678" -p /home/user/Projects/my-repo
 ```
+
+**What it does:**
+
+1. Creates agent directory: `~/.openclaw/agents/<repo>/agent/`
+2. Creates auth-profiles.json with the provided API key
+3. Adds binding to map Discord channel → repo workspace
+4. Restarts OpenCLAW gateway
+
+**Input handling:**
+
+| Input | Required | Default |
+|-------|----------|---------|
+| Repo name | Yes | - |
+| API key | Yes | - |
+| Repo path | No | `~/Projects/<repo-name>` |
+| Discord channel | No | Searches existing channels by name, prompts if not found |
+
+**Notes:**
+
+- The script pauses to prompt for channel ID if no matching channel exists
+- Requires `jq` to be installed on the server
+- Creates minimal agent structure (copies models.json from main agent)
 
 ## Troubleshooting
 

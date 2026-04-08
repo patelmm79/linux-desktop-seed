@@ -1,0 +1,24 @@
+{
+  "name": "Cost Report",
+  "description": "Get API cost breakdown and context health metrics from OpenCLAW",
+  "id": "cost_report",
+  "version": "1.0.0",
+  "category": "monitoring",
+  "parameters": {},
+  "commands": [
+    {
+      "name": "cost-report",
+      "description": "Show API spend by model and time period",
+      "handler": "scripts/cost-monitor.py cost-report"
+    },
+    {
+      "name": "context-health",
+      "description": "Show context token usage efficiency",
+      "handler": "scripts/cost-monitor.py context-health"
+    }
+  ],
+  "environment": {
+    "DISCORD_CHANNEL_ID": "${DISCORD_CHANNEL_ID}",
+    "OPENCLAW_REQUIRED": "true"
+  }
+}
