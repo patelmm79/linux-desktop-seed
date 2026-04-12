@@ -15,17 +15,13 @@
   "agents": {
     "defaults": {
       "model": "openrouter/minimax/MiniMax-M2.7",
+      "thinkingDefault": "minimal",
       "compaction": {
         "mode": "default",
         "reserveTokens": 20000,
         "keepRecentTokens": 4000,
         "reserveTokensFloor": 20000,
-        "maxHistoryShare": 0.02,
-        "metricsExport": {
-          "enabled": true,
-          "db": "~/.openclaw/cost-log.db",
-          "table": "compaction_events"
-        }
+        "maxHistoryShare": 0.03
       },
       "maxConcurrent": 4,
       "subagents": {

@@ -53,11 +53,13 @@ To prevent this, increase your compaction buffer by setting agents.defaults.comp
     "mode": "default",
     "reserveTokens": 20000,
     "reserveTokensFloor": 20000,
-    "maxHistoryShare": 0.05,
+    "maxHistoryShare": 0.03,
     "keepRecentTokens": 4000
   }
 }
 ```
+
+> **Note (2026-04-09):** Further reduced `maxHistoryShare` from 0.05 to 0.03 to prevent repeated compaction failures. This gives even more working room for compaction while still retaining context.
 
 ---
 
@@ -108,7 +110,7 @@ ssh hetzner "jq '.agents.defaults.compaction' ~/.openclaw/openclaw.json"
 
 ### To update VM config:
 ```bash
-ssh hetzner "jq '.agents.defaults.compaction = {\"mode\": \"default\", \"reserveTokens\": 20000, \"reserveTokensFloor\": 20000, \"maxHistoryShare\": 0.1, \"keepRecentTokens\": 4000}' ~/.openclaw/openclaw.json > /tmp/openclaw.json.new && mv /tmp/openclaw.json.new ~/.openclaw/openclaw.json"
+ssh hetzner "jq '.agents.defaults.compaction = {\"mode\": \"default\", \"reserveTokens\": 20000, \"reserveTokensFloor\": 20000, \"maxHistoryShare\": 0.03, \"keepRecentTokens\": 4000}' ~/.openclaw/openclaw.json > /tmp/openclaw.json.new && mv /tmp/openclaw.json.new ~/.openclaw/openclaw.json"
 ```
 
 ---

@@ -16,7 +16,7 @@ A skill that clones any GitHub repository to the VM and notifies a Discord chann
 |-----------|------|----------|---------|-------------|
 | `repo` | string | Yes | - | GitHub repository (format: `owner/repo` or full URL) |
 | `branch` | string | No | `main` | Branch to clone |
-| `discord_channel_id` | string | No | `1491175562348331209` | Discord channel for notifications |
+| `discord_channel_id` | string | No | (from env) | Discord channel for notifications |
 
 ## Directory Structure
 
@@ -27,6 +27,8 @@ A skill that clones any GitHub repository to the VM and notifies a Discord chann
 ```
 
 Example: `~/repos/patelmm79/dev-nexus-action-agent`
+
+**Important:** On VMs where OpenCLAW runs as `desktopuser`, repos are stored in `/home/desktopuser/repos/` to ensure the agent can access them. The script automatically detects this and uses the correct path.
 
 ## Behavior
 
@@ -52,10 +54,11 @@ Example: `~/repos/patelmm79/dev-nexus-action-agent`
 - Input schema: JSON with repo, optional branch
 
 ### Discord Integration
-- Uses OpenCLAW CLI for Discord notifications
-- Command: `openclaw message send --channel discord --target <channel_id> --message "<msg>"`
-- Requires OpenCLAW to be installed and configured on the VM
-- Channel ID configured at skill level (default: 1491175562348331209)
+- First tries OpenCLAW CLI: `openclaw message send --channel discord --target <channel_id> --message "<msg>"`
+- Falls back to direct Discord REST API if OpenCLAW fails
+- Resolves channel name to ID automatically via Discord API
+- Tries repo name as channel name (e.g., "intelligent-feed") if no channel specified
+- Requires Discord bot token in ~/.openclaw/openclaw.json
 
 ### Git Operations
 - Use `git clone --depth 1` for faster cloning (shallow clone)
