@@ -75,6 +75,21 @@ jobs:
           ssh test-vm "command -v gnome-shell && echo 'gnome-shell found'"
           ssh test-vm "command -v Xvnc && echo 'Xvnc found'"
 
+      - name: Install bats-core
+        run: |
+          git clone https://github.com/bats-core/bats-core.git /tmp/bats-core
+          cd /tmp/bats-core
+          ./install.sh /usr/local
+
+      - name: Run BATS tests
+        run: |
+          if [ -f "tests/deploy-desktop.bats" ]; then
+            bats tests/deploy-desktop.bats
+          else
+            echo "No BATS tests found"
+            exit 1
+          fi
+
       - name: Report success
         if: success()
         run: |
