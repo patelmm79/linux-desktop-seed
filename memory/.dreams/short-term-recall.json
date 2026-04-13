@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "updatedAt": "2026-04-08T15:44:54.746Z",
+  "entries": {
+    "memory:memory/2026-04-02.md:119:130": {
+      "key": "memory:memory/2026-04-02.md:119:130",
+      "path": "memory/2026-04-02.md",
+      "startLine": 119,
+      "endLine": 130,
+      "source": "memory",
+      "snippet": "- **\"One tool owns deployment\"**: Terraform owns `google_cloud_run_v2_service` — env vars, secrets, scaling. Cloud Build only does docker build+push. GitHub Actions orchestrates both. - WIF migration was driven by the three-headed deployment conflict (Cloud Build + GitHub Actions + Terraform all independently running `gcloud run deploy`) - `prod.tfvars` should NOT be committed — secrets architecture via GitHub Actions environments is the correct approach ## Pending / Next Steps 1. User needs to: run `terraform-plan.yml` via workflow_dispatch to verify secrets are wired correctly 2. After plan passes, run `terraform-apply.yml` to actually deploy 3. Cloud Build should then pick up the new `:",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "totalScore": 0.807157606274522,
+      "maxScore": 0.807157606274522,
+      "firstRecalledAt": "2026-04-08T02:18:38.582Z",
+      "lastRecalledAt": "2026-04-08T02:18:38.582Z",
+      "queryHashes": [
+        "6b3db52426c9"
+      ],
+      "recallDays": [
+        "2026-04-08"
+      ],
+      "conceptTags": [
+        "google-cloud-run-v2-service",
+        "three-headed",
+        "prod.tfvars",
+        "terraform-plan.yml",
+        "workflow-dispatch",
+        "terraform-apply.yml",
+        "one",
+        "tool"
+      ]
+    },
+    "memory:memory/2026-04-02.md:96:120": {
+      "key": "memory:memory/2026-04-02.md:96:120",
+      "path": "memory/2026-04-02.md",
+      "startLine": 96,
+      "endLine": 120,
+      "source": "memory",
+      "snippet": "- **Secrets** (sensitive values): GitHub → Settings → Environments → `{env}` → Secrets - `PROD_GITHUB_TOKEN`, `PROD_ANTHROPIC_API_KEY`, `PROD_POSTGRES_PASSWORD`, `PROD_GITHUB_CLIENT_ID`, `PROD_GITHUB_CLIENT_SECRET`, `PROD_JWT_SECRET`, `PROD_FRONTEND_URL` - **Environment variables** (non-secret config): Same GitHub environment → Variables section - `WIF_PROVIDER`, `WIF_SERVICE_ACCOUNT`, `PROD_FRONTEND_URL` - **Workflow YAML** (env-specific non-secret config): hardcoded in workflow `env:` block - CPU, memory, instance counts, region, allowed origins, etc. ### Workflow Files Created - `.github/workflows/terraform-plan.yml` — plan on PR + manual `workflow_dispatch` trigger - `.github/wor",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "totalScore": 0.7935501077244336,
+      "maxScore": 0.7935501077244336,
+      "firstRecalledAt": "2026-04-08T02:18:38.582Z",
+      "lastRecalledAt": "2026-04-08T02:18:38.582Z",
+      "queryHashes": [
+        "6b3db52426c9"
+      ],
+      "recallDays": [
+        "2026-04-08"
+      ],
+      "conceptTags": [
+        "prod-github-token",
+        "prod-anthropic-api-key",
+        "prod-postgres-password",
+        "prod-github-client-id",
+        "prod-github-client-secret",
+        "prod-jwt-secret",
+        "prod-frontend-url",
+        "non-secret"
+      ]
+    },
+    "memory:memory/2026-04-03.md:1:27": {
+      "key": "memory:memory/2026-04-03.md:1:27",
+      "path": "memory/2026-04-03.md",
+      "startLine": 1,
+      "endLine": 27,
+      "source": "memory",
+      "snippet": "# 2026-04-03 — resume-customizer ## alignment_matrix Fix Day ### What happened Multiple attempts to capture a Skills Review screenshot via Playwright UI navigation — all failed. Root cause: Playwright's `fill()` on the job description textarea (`aria-label=\"Or paste job description manually\"`) sets the DOM value but Streamlit's reactive model doesn't register it as a session_state change. `st.session_state.job_description` stays empty → \"Start Workflow\" does nothing. ### Key findings - **Port 8501 conflict**: Multiple old Streamlit processes accumulate. Kill all before restarting. - **Orchestrator**: Works correctly with real LLM. `live_llm_test.py` runs end-to-end and produces PDF. - **a",
+      "recallCount": 2,
+      "dailyCount": 0,
+      "totalScore": 1.5285273798294696,
+      "maxScore": 0.7642636899147348,
+      "firstRecalledAt": "2026-04-08T02:18:38.582Z",
+      "lastRecalledAt": "2026-04-08T15:44:54.746Z",
+      "queryHashes": [
+        "6b3db52426c9",
+        "aa6ddbb6a2b2"
+      ],
+      "recallDays": [
+        "2026-04-08"
+      ],
+      "conceptTags": [
+        "resume-customizer",
+        "alignment-matrix",
+        "aria-label",
+        "session-state",
+        "st.session-state.job-description",
+        "live-llm-test.py",
+        "end-to-end",
+        "resume"
+      ]
+    },
+    "memory:memory/2026-04-01.md:55:83": {
+      "key": "memory:memory/2026-04-01.md:55:83",
+      "path": "memory/2026-04-01.md",
+      "startLine": 55,
+      "endLine": 83,
+      "source": "memory",
+      "snippet": "- `backend/seed_contributions.py` — seeds blog data into contributions DB ### Key Issues (GitHub) - Closed issues #1-7 (Phase 1 done) - Open: #8 (P0 dish-level data), #9-14 (Phase 2), #16 (knowledge graph — done) - Kanban: https://github.com/users/patelmm79/projects/3 ### Cron Jobs (active) - Weekly OSM expansion (Monday 03:00 UTC) - Weekly Wikidata enrichment (Monday 04:00 UTC) - Monthly blogger outreach (1st of month 05:00 UTC) ## Key architectural decisions - **No Yelp dependency** — open data stack only. Foursquare free tier as optional enhancement. - **Owned data:** user-contributed dish-restaurant pairs (SQLite), knowledge graph (CSV) - **Yelp/Google only for real-time enrichment**",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "totalScore": 0.7580862361450424,
+      "maxScore": 0.7580862361450424,
+      "firstRecalledAt": "2026-04-08T02:18:38.582Z",
+      "lastRecalledAt": "2026-04-08T02:18:38.582Z",
+      "queryHashes": [
+        "6b3db52426c9"
+      ],
+      "recallDays": [
+        "2026-04-08"
+      ],
+      "conceptTags": [
+        "backend/seed-contributions.py",
+        "1-7",
+        "dish-level",
+        "9-14",
+        "user-contributed",
+        "dish-restaurant",
+        "yelp/google",
+        "real-time"
+      ]
+    }
+  }
+}

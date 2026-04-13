@@ -9,7 +9,7 @@ _Curated across sessions and projects. Not project-specific — this is the over
 - **Name:** no_decaf_milan (Discord: 1162240440322502656)
 - **Primary channel:** `#globalbitings` Discord server (Guild: 1485047825967480862)
 - **VM:** Ubuntu at `~/GithubProjects/` — multiple projects live here
-- **Owner of:** `patelmm79/GlobalBitings` on GitHub
+- **Owner of:** `DarojaAI/GlobalBitings` on GitHub (formerly `patelmm79/GlobalBitings`)
 - **Communication style:** Direct, asks for status checks, wants me to be proactive about my own gaps
 
 ---
