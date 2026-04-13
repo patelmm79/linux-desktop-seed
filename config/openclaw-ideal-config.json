@@ -36,13 +36,13 @@
       "groupPolicy": "allowlist",
       "streaming": "off",
       "allowFrom": [
-        "user:1162240440322502656"
+        "user:DISCORD_USER_ID_PLACEHOLDER"
       ],
       "guilds": {
-        "1485047825967480862": {
+        "DISCORD_GUILD_ID_PLACEHOLDER": {
           "requireMention": false,
           "users": [
-            "1162240440322502656"
+            "DISCORD_USER_ID_PLACEHOLDER"
           ]
         }
       }
@@ -65,7 +65,7 @@
       "agentId": "main",
       "match": {
         "channel": "discord",
-        "accountId": "1491445641581301760"
+        "accountId": "DISCORD_ACCOUNT_ID_PLACEHOLDER"
       }
     }
   ],
