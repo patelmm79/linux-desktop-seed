@@ -59,7 +59,7 @@ To prevent this, increase your compaction buffer by setting agents.defaults.comp
 }
 ```
 
-> **Note:** `maxHistoryShare` minimum is 0.1 in v2026.4.11+. Values below 0.1 are rejected by the gateway.
+> **Note:** `maxHistoryShare` minimum is 0.1. Values below 0.1 are rejected by the gateway.
 
 ---
 
