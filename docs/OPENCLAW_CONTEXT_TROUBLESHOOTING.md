@@ -53,13 +53,13 @@ To prevent this, increase your compaction buffer by setting agents.defaults.comp
     "mode": "default",
     "reserveTokens": 20000,
     "reserveTokensFloor": 20000,
-    "maxHistoryShare": 0.03,
+    "maxHistoryShare": 0.1,
     "keepRecentTokens": 4000
   }
 }
 ```
 
-> **Note (2026-04-09):** Further reduced `maxHistoryShare` from 0.05 to 0.03 to prevent repeated compaction failures. This gives even more working room for compaction while still retaining context.
+> **Note:** `maxHistoryShare` minimum is 0.1 in v2026.4.11+. Values below 0.1 are rejected by the gateway.
 
 ---
 
