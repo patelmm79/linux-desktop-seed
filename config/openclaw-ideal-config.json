@@ -45,19 +45,19 @@
             "DISCORD_USER_ID_PLACEHOLDER"
           ],
           "channels": {
-            "1485047827737612362": {},
-            "1487986866832805888": {},
-            "1488016789110526104": {},
-            "1488028570977828974": {},
-            "1488329838606549174": {},
-            "1488649282792980550": {},
-            "1489035741341155408": {},
-            "1489446562655637605": {},
-            "1489451199185817630": {},
-            "1491175562348331209": {},
-            "1491445641581301760": {},
-            "1492017314693124106": {},
-            "1492701850217218268": {}
+            "DISCORD_CHANNEL_ID_1": {},
+            "DISCORD_CHANNEL_ID_2": {},
+            "DISCORD_CHANNEL_ID_3": {},
+            "DISCORD_CHANNEL_ID_4": {},
+            "DISCORD_CHANNEL_ID_5": {},
+            "DISCORD_CHANNEL_ID_6": {},
+            "DISCORD_CHANNEL_ID_7": {},
+            "DISCORD_CHANNEL_ID_8": {},
+            "DISCORD_CHANNEL_ID_9": {},
+            "DISCORD_CHANNEL_ID_10": {},
+            "DISCORD_CHANNEL_ID_11": {},
+            "DISCORD_CHANNEL_ID_12": {},
+            "DISCORD_CHANNEL_ID_13": {}
           }
         }
       }
