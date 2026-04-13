@@ -1,7 +1,7 @@
 # OpenCLAW Context Management Troubleshooting Log
 
 **OpenCLAW Version:** v2026.3.28 (MiniMax compatible)
-**Last Updated:** 2026-04-09
+**Last Updated:** 2026-04-13
 **Purpose:** Document context management issues and fixes for future reference
 
 ---
@@ -110,7 +110,8 @@ ssh hetzner "jq '.agents.defaults.compaction' ~/.openclaw/openclaw.json"
 
 ### To update VM config:
 ```bash
-ssh hetzner "jq '.agents.defaults.compaction = {\"mode\": \"default\", \"reserveTokens\": 20000, \"reserveTokensFloor\": 20000, \"maxHistoryShare\": 0.03, \"keepRecentTokens\": 4000}' ~/.openclaw/openclaw.json > /tmp/openclaw.json.new && mv /tmp/openclaw.json.new ~/.openclaw/openclaw.json"
+# For manual compaction fix (use Haiku for summarization):
+ssh prod "jq '.agents.defaults.compaction += {\"model\": \"openrouter/anthropic/claude-haiku-4-5-20251001\", \"mode\": \"safeguard\"} | .agents.defaults.compaction.reserveTokens = 15000' /home/desktopuser/.openclaw/openclaw.json > /tmp/openclaw.json && cp /tmp/openclaw.json /home/desktopuser/.openclaw/openclaw.json"
 ```
 
 ---
@@ -223,4 +224,49 @@ OPENCLAW_CONFIG_DIR="/home/desktopuser/.openclaw"
     "auth": { "mode": "token", "token": "..." }
   }
 }
+```
+
+---
+
+## Manual Compaction Fix (2026-04-13)
+
+### Problem
+`/compact` command failed in dev-nexus channel with error:
+```
+⚙️ Compaction failed: Turn prefix summarization failed: 400 
+Reasoning is mandatory for this endpoint and cannot be disabled.
+```
+
+- Context was at 67% (67k/100k)
+- Worked in other channels (smaller context)
+- Failed in dev-nexus because compaction triggered on large context
+
+### Root Cause
+MiniMax model was being used for summarization during compaction. The API call was either disabling reasoning or not properly enabling it, causing the request to fail.
+
+### Solution Applied
+1. Added dedicated compaction model: `openrouter/anthropic/claude-haiku-4-5-20251001`
+2. Changed mode from `default` to `safeguard` (chunked summarization)
+3. Reduced `reserveTokens` from 20000 to 15000
+
+**Final Working Config:**
+```json
+{
+  "compaction": {
+    "mode": "safeguard",
+    "model": "openrouter/anthropic/claude-haiku-4-5-20251001",
+    "reserveTokens": 15000,
+    "keepRecentTokens": 4000,
+    "reserveTokensFloor": 20000,
+    "maxHistoryShare": 0.1
+  }
+}
+```
+
+### Key Insight
+Use a separate, cheaper model (Haiku) for compaction summarization instead of the main session model (MiniMax). This avoids reasoning compatibility issues and reduces cost.
+
+### To Apply This Fix
+```bash
+ssh prod "jq '.agents.defaults.compaction += {\"model\": \"openrouter/anthropic/claude-haiku-4-5-20251001\", \"mode\": \"safeguard\"} | .agents.defaults.compaction.reserveTokens = 15000' /home/desktopuser/.openclaw/openclaw.json > /tmp/openclaw.json && cp /tmp/openclaw.json /home/desktopuser/.openclaw/openclaw.json"
 ```
