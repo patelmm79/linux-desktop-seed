@@ -1,7 +1,7 @@
 {
   "meta": {
     "lastTouchedVersion": "2026.3.28",
-    "lastTouchedAt": "2026-04-08T22:30:00Z"
+    "lastTouchedAt": "2026-04-13T00:00:00Z"
   },
   "auth": {
     "profiles": {
@@ -43,7 +43,22 @@
           "requireMention": false,
           "users": [
             "DISCORD_USER_ID_PLACEHOLDER"
-          ]
+          ],
+          "channels": {
+            "1485047827737612362": {},
+            "1487986866832805888": {},
+            "1488016789110526104": {},
+            "1488028570977828974": {},
+            "1488329838606549174": {},
+            "1488649282792980550": {},
+            "1489035741341155408": {},
+            "1489446562655637605": {},
+            "1489451199185817630": {},
+            "1491175562348331209": {},
+            "1491445641581301760": {},
+            "1492017314693124106": {},
+            "1492701850217218268": {}
+          }
         }
       }
     }
@@ -73,22 +88,25 @@
     "mode": "merge",
     "providers": {
       "openrouter": {
-        "baseUrl": "https://openrouter.ai/api/v1",
-        "apiKey": "OPENROUTER_API_KEY_PLACEHOLDER",
-        "api": "openai-completions",
-        "injectNumCtxForOpenAICompat": true,
+        "apiKey": "ENV_PLACEHOLDER",
         "headers": {
           "HTTP-Referer": "https://github.com/patelmm79/ubuntu-8gb-hel1-1",
           "X-Title": "ubuntu-8gb-hel1-1"
         },
+        "baseUrl": "https://openrouter.ai/api/v1",
+        "api": "openai-completions",
+        "injectNumCtxForOpenAICompat": true,
         "models": [
           {
             "id": "minimax/MiniMax-M2.7",
             "name": "MiniMax-M2.7",
             "api": "openai-completions",
             "reasoning": true,
-            "input": ["text", "image"],
-            "contextWindow": 1048576,
+            "input": [
+              "text",
+              "image"
+            ],
+            "contextWindow": 100000,
             "maxTokens": 8192,
             "cost": {
               "input": 0.0,

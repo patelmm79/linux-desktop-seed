@@ -8,10 +8,49 @@ OpenCLAW configuration is managed through a strict lockdown process to prevent a
 
 | File | Location | Purpose |
 |------|----------|---------|
-| Ideal config | `config/openclaw-ideal-config.json` | Reference config in git (no secrets) |
 | Active config | `~/.openclaw/openclaw.json` | Live config on VM (read-only) |
+| Timestamped ideal | `~/.openclaw/openclaw-ideal-config.YYYY-MM-DD.json` | Working config with secrets (VM only) |
+| Git ideal config | `config/openclaw-ideal-config.json` | Reference config in git (NO secrets - placeholders only) |
 | Validation | `/usr/local/bin/validate-openclaw-config.sh` | Config validation before start |
 | Wrapper | `/home/desktopuser/bin/openclaw-start.sh` | Starts OpenCLAW with validation |
+
+## After Any Config Change: Save Ideal
+
+**Before making any change that affects production, ALWAYS save a timestamped backup:**
+
+```bash
+# On VM - save with today's date
+cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw-ideal-config.2026-04-13.json
+
+# Then sanitize for git (remove secrets)
+# Replace actual IDs with placeholders, then copy to repo
+```
+
+**The process:**
+1. Make config change on VM
+2. Test it works
+3. Save timestamped copy: `openclaw-ideal-config.YYYY-MM-DD.json`
+4. Sanitize with placeholders and save to `config/openclaw-ideal-config.json` in repo
+
+## Quick Restore (When Things Break)
+
+**If OpenCLAW stops responding to Discord:**
+
+```bash
+# Step 1: Kill existing processes
+ssh prod "sudo pkill -u desktopuser openclaw"
+
+# Step 2: Restore from latest timestamped ideal (or .bak)
+ssh prod "cp /home/desktopuser/.openclaw/openclaw-ideal-config.2026-04-13.json /home/desktopuser/.openclaw/openclaw.json"
+
+# Step 3: Start with correct environment
+ssh prod "sudo -u desktopuser bash -c 'openclaw gateway --port 18789' &"
+
+# Step 4: Verify
+ssh prod "sudo -u desktopuser bash -c 'openclaw status'" | grep -A2 Discord
+```
+
+**The golden rule:** When in doubt, restore from `openclaw.json.bak` or the latest `openclaw-ideal-config.*.json` — never guess at values.
 
 ## Lockdown Rules
 
@@ -167,4 +206,4 @@ OpenCLAW starts via XDG autostart (`~/.config/autostart/openclaw-gateway.desktop
 
 ---
 
-**Last Updated:** 2026-04-10
+**Last Updated:** 2026-04-13
