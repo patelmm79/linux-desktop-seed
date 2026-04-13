@@ -125,7 +125,7 @@ ssh hetzner "jq '.agents.defaults.compaction = {\"mode\": \"default\", \"reserve
 ## Discord Integration Issues (2026-04-08)
 
 ### Problem
-Discord messages to intelligent-feed channel (1491445641581301760) not being received/processed by OpenCLAW gateway.
+Discord messages to intelligent-feed channel (DISCORD_CHANNEL_ID_PLACEHOLDER) not being received/processed by OpenCLAW gateway.
 
 ### Errors Encountered
 
@@ -156,7 +156,7 @@ Discord messages to intelligent-feed channel (1491445641581301760) not being rec
        "agentId": "main",
        "match": {
          "channel": "discord",
-         "accountId": "1491445641581301760"
+         "accountId": "DISCORD_ACCOUNT_ID_PLACEHOLDER"
        }
      }
    ]
@@ -192,13 +192,13 @@ OPENCLAW_CONFIG_DIR="/home/desktopuser/.openclaw"
   "channels": {
     "discord": {
       "enabled": true,
-      "token": "MTQ4...",
+      "token": "DISCORD_BOT_TOKEN_PLACEHOLDER",
       "groupPolicy": "allowlist",
-      "allowFrom": ["user:1162240440322502656"],
+      "allowFrom": ["user:DISCORD_USER_ID_PLACEHOLDER"],
       "guilds": {
-        "1485047825967480862": {
+        "DISCORD_GUILD_ID_PLACEHOLDER": {
           "requireMention": false,
-          "users": ["1162240440322502656"]
+          "users": ["DISCORD_USER_ID_PLACEHOLDER"]
         }
       }
     }
@@ -208,7 +208,7 @@ OPENCLAW_CONFIG_DIR="/home/desktopuser/.openclaw"
       "agentId": "main",
       "match": {
         "channel": "discord",
-        "accountId": "1491445641581301760"
+        "accountId": "DISCORD_ACCOUNT_ID_PLACEHOLDER"
       }
     }
   ],

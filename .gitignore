@@ -19,3 +19,9 @@ tests/test-usability.sh
 # Template: config/openclaw-defaults.json
 config/openclaw-ideal-config.json
 scripts/openclaw-ideal-config.json
+
+# Sensitive runtime configs and scripts
+scripts/ccr-final.json
+scripts/ccr-config.json
+scripts/discord-claude-bridge.sh
+scripts/openclaw-working-config.json
