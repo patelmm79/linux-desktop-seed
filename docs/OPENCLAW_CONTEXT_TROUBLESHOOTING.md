@@ -111,7 +111,7 @@ ssh hetzner "jq '.agents.defaults.compaction' ~/.openclaw/openclaw.json"
 ### To update VM config:
 ```bash
 # For manual compaction fix (use Haiku for summarization):
-ssh prod "jq '.agents.defaults.compaction += {\"model\": \"openrouter/anthropic/claude-haiku-4-5-20251001\", \"mode\": \"safeguard\"} | .agents.defaults.compaction.reserveTokens = 15000' /home/desktopuser/.openclaw/openclaw.json > /tmp/openclaw.json && cp /tmp/openclaw.json /home/desktopuser/.openclaw/openclaw.json"
+ssh prod "jq '.agents.defaults.compaction += {\"model\": \"openrouter/anthropic/claude-haiku-4-5\", \"mode\": \"safeguard\"} | .agents.defaults.compaction.reserveTokens = 15000' /home/desktopuser/.openclaw/openclaw.json > /tmp/openclaw.json && cp /tmp/openclaw.json /home/desktopuser/.openclaw/openclaw.json"
 ```
 
 ---
@@ -254,7 +254,7 @@ MiniMax model was being used for summarization during compaction. The API call w
 {
   "compaction": {
     "mode": "safeguard",
-    "model": "openrouter/anthropic/claude-haiku-4-5-20251001",
+    "model": "openrouter/anthropic/claude-haiku-4-5",
     "reserveTokens": 15000,
     "keepRecentTokens": 4000,
     "reserveTokensFloor": 20000,
@@ -264,9 +264,9 @@ MiniMax model was being used for summarization during compaction. The API call w
 ```
 
 ### Key Insight
-Use a separate, cheaper model (Haiku) for compaction summarization instead of the main session model (MiniMax). This avoids reasoning compatibility issues and reduces cost.
+Use a separate, cheaper model (Haiku) for compaction summarization instead of the main session model (MiniMax). This avoids reasoning compatibility issues and reduces cost. **Important:** Use the `openrouter/anthropic/claude-haiku-4-5` format - not `anthropic/claude-haiku-4.5` or other variants.
 
 ### To Apply This Fix
 ```bash
-ssh prod "jq '.agents.defaults.compaction += {\"model\": \"openrouter/anthropic/claude-haiku-4-5-20251001\", \"mode\": \"safeguard\"} | .agents.defaults.compaction.reserveTokens = 15000' /home/desktopuser/.openclaw/openclaw.json > /tmp/openclaw.json && cp /tmp/openclaw.json /home/desktopuser/.openclaw/openclaw.json"
+ssh prod "jq '.agents.defaults.compaction += {\"model\": \"openrouter/anthropic/claude-haiku-4-5\", \"mode\": \"safeguard\"} | .agents.defaults.compaction.reserveTokens = 15000' /home/desktopuser/.openclaw/openclaw.json > /tmp/openclaw.json && cp /tmp/openclaw.json /home/desktopuser/.openclaw/openclaw.json"
 ```

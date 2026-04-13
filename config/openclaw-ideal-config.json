@@ -21,7 +21,7 @@
         "keepRecentTokens": 4000,
         "reserveTokensFloor": 20000,
         "maxHistoryShare": 0.1,
-        "model": "openrouter/anthropic/claude-haiku-4-5-20251001"
+        "model": "openrouter/anthropic/claude-haiku-4-5"
       }
     },
     "list": [
@@ -58,7 +58,11 @@
             "DISCORD_CHANNEL_ID_10": {},
             "DISCORD_CHANNEL_ID_11": {},
             "DISCORD_CHANNEL_ID_12": {},
-            "DISCORD_CHANNEL_ID_13": {}
+            "DISCORD_CHANNEL_ID_13": {},
+            "DISCORD_CHANNEL_ID_14": {},
+            "DISCORD_CHANNEL_ID_15": {},
+            "DISCORD_CHANNEL_ID_16": {},
+            "DISCORD_CHANNEL_ID_17": {}
           }
         }
       }
