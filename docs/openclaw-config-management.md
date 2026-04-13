@@ -16,10 +16,10 @@ OpenCLAW configuration is managed through a strict lockdown process to prevent a
 ## Lockdown Rules
 
 ### Never Do
-- ❌ Edit `~/.openclaw/openclaw.json` directly
-- ❌ Add `.models` section (breaks v2026.3.28)
-- ❌ Restart OpenCLAW without validation
+- ❌ Edit config without understanding current state
+- ❌ Restart without validating first
 - ❌ Make unprompted config changes
+- ❌ Leave root config out of sync with desktopuser config
 
 ### Always Do
 - ✅ Propose changes with justification
@@ -31,9 +31,9 @@ OpenCLAW configuration is managed through a strict lockdown process to prevent a
 
 The validation script (`/usr/local/bin/validate-openclaw-config.sh`) checks:
 1. Valid JSON syntax
-2. No `.models` section (forbidden)
-3. Required `agents.defaults.model` exists
-4. Model format is valid (alphanumeric, `/`, `.`, `-`, `_`)
+2. Required `agents.defaults.model` exists
+3. Model format is valid (alphanumeric, `/`, `.`, `-`, `_`)
+4. Required `.models.providers` fields (baseUrl, apiKey, models)
 
 ### Run Validation
 ```bash
@@ -43,6 +43,21 @@ ssh hetzner "/usr/local/bin/validate-openclaw-config.sh"
 ### Start with Validation
 ```bash
 ssh hetzner "/home/desktopuser/bin/openclaw-start.sh"
+```
+
+## Restarting Gateway
+
+After config changes, restart the gateway:
+
+```bash
+# Sync config to root (required - service runs as root)
+ssh hetzner "cp /home/desktopuser/.openclaw/openclaw.json /root/.openclaw/openclaw.json"
+
+# Restart as user
+ssh hetzner "systemctl --user restart openclaw-gateway.service"
+
+# Verify
+ssh hetzner "systemctl --user status openclaw-gateway.service --no-pager | head -8"
 ```
 
 ## Making Config Changes
@@ -109,8 +124,8 @@ pkill -f openclaw-gateway
 cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json
 chown desktopuser:desktopuser ~/.openclaw/openclaw.json
 
-# Ensure no root config exists (common cause of breakage)
-rm -rf /root/.openclaw
+# Sync to root (required - service runs as root)
+cp ~/.openclaw/openclaw.json /root/.openclaw/openclaw.json
 ```
 
 ### Step 4: Start with correct environment
