@@ -21,14 +21,14 @@ Transition the prod OpenCLAW configuration from the single-agent "main" structur
 | 1488028570977828974 | elastica | main |
 | 1488329838606549174 | globalbitings | main |
 | 1488649282792980550 | dev-nexus-frontend | main |
-| 1489035741341155408 | (unknown) | main |
-| 1489446562655637605 | (unknown) | main |
-| 1489451199185817630 | (unknown) | main |
-| 1491175562348331209 | (unknown) | main |
-| 1491445641581301760 | (unknown) | main |
-| 1492017314693124106 | (unknown) | main |
-| 1492701850217218268 | linux-desktop-seed | main → **migrate to linux-desktop-seed** |
-| 1493278190540427395 | (unknown) | main |
+| 1489035741341155408 | resume-customizer | main → resume-customizer ✅ MIGRATED |
+| 1489446562655637605 | dynamic-worlock | main |
+| 1489451199185817630 | rag-research-tool | main |
+| 1491175562348331209 | dev-nexus-action-agent | main |
+| 1491445641581301760 | intelligent-feed | main |
+| 1492017314693124106 | research-orchestrator | main |
+| 1492701850217218268 | linux-desktop-seed | main → linux-desktop-seed ✅ MIGRATED |
+| 1493278190540427395 | test-agent | main |
 
 ### Migration Strategy
 The key insight is that **the existing binding uses `accountId`** which means any message from that user (accountId) goes to the main agent. To add per-repo routing:
@@ -40,9 +40,11 @@ The key insight is that **the existing binding uses `accountId`** which means an
 This is non-disruptive: existing channels still route to `main`, only channel 1492701850217218268 gets a new handler.
 
 ## Target Test Config Structure
-- Two agents: `main` + `linux-desktop-seed` (per-repo)
+- Three agents: `main` + `linux-desktop-seed` + `resume-customizer` (per-repo)
 - Default model: `openrouter/minimax/MiniMax-M2.7`
-- Per-channel routing: linux-desktop-seed agent → channel 1492701850217218268
+- Per-channel routing:
+  - linux-desktop-seed agent → channel 1492701850217218268
+  - resume-customizer agent → channel 1489035741341155408 ✅ MIGRATED
 - Agent-specific workspace: `/home/desktopuser/Projects/linux-desktop-seed`
 - 2 models: MiniMax-M2.7, Claude Haiku
 
@@ -107,16 +109,9 @@ This is non-disruptive: existing channels still route to `main`, only channel 14
    ]
    ```
    
-   **Target bindings** (main handles existing channels, linux-desktop-seed handles #linux-desktop-seed):
+   **Target bindings** (route FIRST, then main):
    ```json
    "bindings": [
-     {
-       "agentId": "main",
-       "match": {
-         "channel": "discord",
-         "accountId": "1491445641581301760"
-       }
-     },
      {
        "type": "route",
        "agentId": "linux-desktop-seed",
@@ -124,9 +119,18 @@ This is non-disruptive: existing channels still route to `main`, only channel 14
          "channel": "discord",
          "peer": { "kind": "channel", "id": "1492701850217218268" }
        }
+     },
+     {
+       "agentId": "main",
+       "match": {
+         "channel": "discord",
+         "accountId": "1491445641581301760"
+       }
      }
    ]
    ```
+
+   **CRITICAL: Route binding must come FIRST** - Explicit `type: route` with `peer.kind: channel` must be placed before the accountId binding. The gateway evaluates bindings in order and uses the first match.
 
 5. **Add commands config**:
    ```json
@@ -277,11 +281,20 @@ git config --global --add safe.directory /home/desktopuser/Projects/linux-deskto
 
 ### Phase 5: Restart Gateway
 ```bash
+# CRITICAL: Remove old log file if root created it (desktopuser can't write to it)
+sudo rm -f /tmp/openclaw-gateway.log
+
 # Kill existing gateway
 pkill -f 'openclaw gateway' || true
 
-# Start as desktopuser
-sudo -u desktopuser openclaw gateway > /tmp/openclaw-gateway.log 2>&1 &
+# Start as desktopuser (must run as desktopuser, not root)
+sudo -u desktopuser bash -c "cd /home/desktopuser && nohup openclaw gateway > /tmp/openclaw-gateway.log 2>&1 &"
+
+# Verify it's running
+sleep 3 && ps aux | grep openclaw-gateway | grep -v grep
+
+# If it fails with "Missing config", use --allow-unconfigured flag
+# sudo -u desktopuser bash -c "cd /home/desktopuser && nohup openclaw gateway --allow-unconfigured > /tmp/openclaw-gateway.log 2>&1 &"
 ```
 
 ### Phase 6: Verify
@@ -410,22 +423,23 @@ sudo -u desktopuser openclaw gateway &
 
 | Aspect | Prod Current | Prod Target |
 |--------|--------------|-------------|
-| Agents | 1 (main) | 2 (main + linux-desktop-seed) |
+| Agents | 1 (main) | 3 (main + linux-desktop-seed + resume-customizer) |
 | Default model | claude-haiku-4-5 | MiniMax-M2.7 |
 | Compaction | none | safeguard mode |
 | Commands | missing | present |
 | Browser | missing | noSandbox: true |
 | Gateway port | 18789 | 18789 (explicit) |
-| Bindings | 1 (main→accountId) | 2 (main→accountId + route→channel) |
-| Channel requireMention | not set | set for 1492701850217218268 |
+| Bindings | 1 (main→accountId) | 3 (main→accountId + 2 route→channel) |
+| Channel requireMention | not set | set for 1489035741341155408, 1492701850217218268 |
 
 ## Migration Decision Points
 
 ### Option A: Non-Disruptive Migration (Recommended)
 - Keep existing main agent binding intact
-- Add linux-desktop-seed as second agent
-- Only #linux-desktop-seed channel changes handler
+- Add linux-desktop-seed and resume-customizer as additional agents
+- Only specific channels change handler (not all 17)
 - Risk: **LOW** - existing channels unaffected
+- **Status:** ✅ 2 channels migrated (1492701850217218268, 1489035741341155408)
 
 ### Option B: Full Migration
 - Remove main→accountId binding entirely
@@ -458,6 +472,7 @@ sudo -u desktopuser openclaw gateway &
 
 ## Notes
 - Prod will maintain `main` agent for general channels (1491445641581301760, etc.)
+- New `resume-customizer` agent handles channel 1489035741341155408 (MIGRATED ✅)
 - New `linux-desktop-seed` agent handles only #linux-desktop-seed channel (1492701850217218268)
 - This mirrors the test VM setup exactly
 - Both configs can coexist - prod handles more channels, test is proof-of-concept
