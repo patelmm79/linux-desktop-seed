@@ -4,31 +4,31 @@
 Transition the prod OpenCLAW configuration from the single-agent "main" structure to the per-repo agent routing structure used in test VM.
 
 ## Current Prod Config Structure
-- Single agent: `main` 
+- Single agent: `main`
 - Default model: `openrouter/anthropic/claude-haiku-4-5`
 - 17 Discord channels mapped to single agent via accountId binding
-- Single binding: agentId "main" → accountId 1491445641581301760
+- Single binding: agentId "main" → accountId (user ID)
 - 3 models: MiniMax-M2.7, Claude Haiku, Claude Sonnet
 
 ## Channel Mapping - CRITICAL PATH
 
 ### Current Prod Channel List
-| Channel ID | Channel Name | GitHub Owner | Repo | Current Handler |
-|------------|--------------|--------------|------|-----------------|
-| 1485047827737612362 | general | patelmm79 | — | main (no repo) |
-| 1487986866832805888 | bond-nexus | DarojaAI | DarojaAI/bond-nexus | bond-nexus ✅ MIGRATED |
-| 1488016789110526104 | dev-nexus | DarojaAI | DarojaAI/dev-nexus | dev-nexus ✅ MIGRATED |
-| 1488028570977828974 | elastica | patelmm79 | patelmm79/elastica | elastica ✅ MIGRATED |
-| 1488329838606549174 | globalbitings | patelmm79 | patelmm79/globalbitings | globalbitings ✅ MIGRATED |
-| 1488649282792980550 | dev-nexus-frontend | DarojaAI | DarojaAI/dev-nexus-frontend | dev-nexus-frontend ✅ MIGRATED |
-| 1489035741341155408 | resume-customizer | patelmm79 | patelmm79/resume-customizer | resume-customizer ✅ MIGRATED |
-| 1489446562655637605 | dynamic-worlock | patelmm79 | patelmm79/dynamic-worlock | dynamic-worlock ✅ MIGRATED |
-| 1489451199185817630 | rag-research-tool | DarojaAI | DarojaAI/rag-research-tool | rag-research-tool ✅ MIGRATED |
-| 1491175562348331209 | dev-nexus-action-agent | DarojaAI | DarojaAI/dev-nexus-action-agent | dev-nexus-action-agent ✅ MIGRATED |
-| 1491445641581301760 | intelligent-feed | patelmm79 | patelmm79/intelligent-feed | intelligent-feed ✅ MIGRATED |
-| 1492017314693124106 | research-orchestrator | DarojaAI | DarojaAI/research-orchestrator | research-orchestrator ✅ MIGRATED |
-| 1492701850217218268 | linux-desktop-seed | patelmm79 | patelmm79/linux-desktop-seed | linux-desktop-seed ✅ MIGRATED |
-| 1493278190540427395 | test-agent | patelmm79 | — | main (no repo) |
+| Channel Name | GitHub Owner | Repo | Current Handler |
+|--------------|--------------|------|-----------------|
+| general | patelmm79 | — | main (no repo) |
+| bond-nexus | DarojaAI | DarojaAI/bond-nexus | bond-nexus ✅ MIGRATED |
+| dev-nexus | DarojaAI | DarojaAI/dev-nexus | dev-nexus ✅ MIGRATED |
+| elastica | patelmm79 | patelmm79/elastica | elastica ✅ MIGRATED |
+| globalbitings | patelmm79 | patelmm79/globalbitings | globalbitings ✅ MIGRATED |
+| dev-nexus-frontend | DarojaAI | DarojaAI/dev-nexus-frontend | dev-nexus-frontend ✅ MIGRATED |
+| resume-customizer | patelmm79 | patelmm79/resume-customizer | resume-customizer ✅ MIGRATED |
+| dynamic-worlock | patelmm79 | patelmm79/dynamic-worlock | dynamic-worlock ✅ MIGRATED |
+| rag-research-tool | DarojaAI | DarojaAI/rag-research-tool | rag-research-tool ✅ MIGRATED |
+| dev-nexus-action-agent | DarojaAI | DarojaAI/dev-nexus-action-agent | dev-nexus-action-agent ✅ MIGRATED |
+| intelligent-feed | patelmm79 | patelmm79/intelligent-feed | intelligent-feed ✅ MIGRATED |
+| research-orchestrator | DarojaAI | DarojaAI/research-orchestrator | research-orchestrator ✅ MIGRATED |
+| linux-desktop-seed | patelmm79 | patelmm79/linux-desktop-seed | linux-desktop-seed ✅ MIGRATED |
+| test-agent | patelmm79 | — | main (no repo) |
 
 ### Migration Strategy
 The key insight is that **the existing binding uses `accountId`** which means any message from that user (accountId) goes to the main agent. To add per-repo routing:
@@ -37,14 +37,14 @@ The key insight is that **the existing binding uses `accountId`** which means an
 2. **Add new route binding** - The new `linux-desktop-seed` agent gets explicit channel routing
 3. **Route precedence** - Explicit `type: route` with `peer.kind: channel` takes precedence over accountId binding
 
-This is non-disruptive: existing channels still route to `main`, only channel 1492701850217218268 gets a new handler.
+This is non-disruptive: existing channels still route to `main`, only #linux-desktop-seed gets a new handler.
 
 ## Target Test Config Structure
 - Three agents: `main` + `linux-desktop-seed` + `resume-customizer` (per-repo)
 - Default model: `openrouter/minimax/MiniMax-M2.7`
 - Per-channel routing:
-  - linux-desktop-seed agent → channel 1492701850217218268
-  - resume-customizer agent → channel 1489035741341155408 ✅ MIGRATED
+  - linux-desktop-seed agent → #linux-desktop-seed channel
+  - resume-customizer agent → #resume-customizer channel ✅ MIGRATED
 - Agent-specific workspace: `/home/desktopuser/Projects/linux-desktop-seed`
 - 2 models: MiniMax-M2.7, Claude Haiku
 
@@ -103,12 +103,12 @@ This is non-disruptive: existing channels still route to `main`, only channel 14
        "agentId": "main",
        "match": {
          "channel": "discord",
-         "accountId": "1491445641581301760"
+         "accountId": "USER_ID"
        }
      }
    ]
    ```
-   
+
    **Target bindings** (route FIRST, then main):
    ```json
    "bindings": [
@@ -117,14 +117,14 @@ This is non-disruptive: existing channels still route to `main`, only channel 14
        "agentId": "linux-desktop-seed",
        "match": {
          "channel": "discord",
-         "peer": { "kind": "channel", "id": "1492701850217218268" }
+         "peer": { "kind": "channel", "id": "CHANNEL_ID" }
        }
      },
      {
        "agentId": "main",
        "match": {
          "channel": "discord",
-         "accountId": "1491445641581301760"
+         "accountId": "USER_ID"
        }
      }
    ]
@@ -150,49 +150,29 @@ This is non-disruptive: existing channels still route to `main`, only channel 14
 
 The `channels.discord.guilds` section lists all allowed channels. For the migration:
 
-**Current prod channels** (all under guild 1485047825967480862):
+**Current prod channels** (all under a single guild):
 ```json
 "channels": {
-  "1485047827737612362": {},
-  "1487986866832805888": {},
-  "1488016789110526104": {},
-  "1488028570977828974": {},
-  "1488329838606549174": {},
-  "1488649282792980550": {},
-  "1489035741341155408": {},
-  "1489446562655637605": {},
-  "1489451199185817630": {},
-  "1491175562348331209": {},
-  "1491445641581301760": {},
-  "1492017314693124106": {},
-  "1492701850217218268": {},    // <-- This is #linux-desktop-seed
-  "1493278190540427395": {}
-}
-```
-
-**Add per-channel requireMention for linux-desktop-seed channel**:
-```json
-"channels": {
-  "1485047827737612362": {},
-  "1487986866832805888": {},
-  "1488016789110526104": {},
-  "1488028570977828974": {},
-  "1488329838606549174": {},
-  "1488649282792980550": {},
-  "1489035741341155408": {},
-  "1489446562655637605": {},
-  "1489451199185817630": {},
-  "1491175562348331209": {},
-  "1491445641581301760": {},
-  "1492017314693124106": {},
-  "1492701850217218268": {
-    "requireMention": false   // <-- Add this for #linux-desktop-seed
+  "general": {},
+  "bond-nexus": {},
+  "dev-nexus": {},
+  "elastica": {},
+  "globalbitings": {},
+  "dev-nexus-frontend": {},
+  "resume-customizer": {},
+  "dynamic-worlock": {},
+  "rag-research-tool": {},
+  "dev-nexus-action-agent": {},
+  "intelligent-feed": {},
+  "research-orchestrator": {},
+  "linux-desktop-seed": {
+    "requireMention": false
   },
-  "1493278190540427395": {}
+  "test-agent": {}
 }
 ```
 
-This mirrors the test config exactly - the channel 1492701850217218268 has `requireMention: false` so the linux-desktop-seed agent responds without needing @mention.
+This mirrors the test config exactly - the #linux-desktop-seed channel has `requireMention: false` so the agent responds without needing @mention.
 
 ### Phase 3: Create Agent Directory Structure with Memory
 On prod VM:
@@ -300,7 +280,7 @@ sleep 3 && ps aux | grep openclaw-gateway | grep -v grep
 ### Phase 6: Verify
 - [ ] Gateway starts without errors
 - [ ] Discord connected
-- [ ] Test message to channel 1492701850217218268 routes to linux-desktop-seed agent
+- [ ] Test message to #linux-desktop-seed channel routes to linux-desktop-seed agent
 - [ ] Agent responds with its config (repo URL, local path, model)
 
 ### Phase 7: Channel Migration Verification
@@ -311,18 +291,18 @@ sleep 3 && ps aux | grep openclaw-gateway | grep -v grep
 tail -50 /home/desktopuser/.openclaw/logs/gateway.log | grep -i "route\|bind\|channel"
 
 # Test that existing channels still route to main agent
-# Send test message to #general (1485047827737612362) - should go to main
+# Send test message to #general - should go to main
 
 # Verify new channel routing
-# Send test message to #linux-desktop-seed (1492701850217218268) - should go to linux-desktop-seed
+# Send test message to #linux-desktop-seed - should go to linux-desktop-seed
 ```
 
 **Expected behavior after migration**:
 | Channel | Expected Handler | How to Verify |
 |---------|------------------|---------------|
-| 1485047827737612362 (general) | main agent | Check logs - should see "main" in routing |
-| 1491445641581301760 | main agent | Check logs - should see "main" in routing |
-| 1492701850217218268 (linux-desktop-seed) | linux-desktop-seed agent | Check logs - should see "linux-desktop-seed" in routing |
+| #general | main agent | Check logs - should see "main" in routing |
+| #intelligent-feed | main agent | Check logs - should see "main" in routing |
+| #linux-desktop-seed | linux-desktop-seed agent | Check logs - should see "linux-desktop-seed" in routing |
 
 **What if existing channels break?**
 - Restore backup: `cp /home/desktopuser/.openclaw/openclaw.json.backup-prod-legacy /home/desktopuser/.openclaw/openclaw.json`
@@ -335,7 +315,7 @@ tail -50 /home/desktopuser/.openclaw/logs/gateway.log | grep -i "route\|bind\|ch
 
 #### Step 9.1: Verify Single Channel Works
 ```bash
-# Send test message to #linux-desktop-seed channel (1492701850217218268)
+# Send test message to #linux-desktop-seed channel
 # Format: "Hello, what repo am I working with?"
 ```
 
@@ -357,7 +337,7 @@ ls -la /home/desktopuser/.openclaw/agents/main/agent/memory/
 
 #### Step 9.3: Verify Existing Channels Unaffected
 ```bash
-# Send test message to #general (1485047827737612362)
+# Send test message to #general
 # Should still route to main agent
 ```
 
@@ -430,7 +410,7 @@ sudo -u desktopuser openclaw gateway &
 | Browser | missing | noSandbox: true |
 | Gateway port | 18789 | 18789 (explicit) |
 | Bindings | 1 (main→accountId) | 3 (main→accountId + 2 route→channel) |
-| Channel requireMention | not set | set for 1489035741341155408, 1492701850217218268 |
+| Channel requireMention | not set | set for #resume-customizer, #linux-desktop-seed |
 
 ## Migration Decision Points
 
@@ -439,7 +419,7 @@ sudo -u desktopuser openclaw gateway &
 - Add linux-desktop-seed and resume-customizer as additional agents
 - Only specific channels change handler (not all 17)
 - Risk: **LOW** - existing channels unaffected
-- **Status:** ✅ 2 channels migrated (1492701850217218268, 1489035741341155408)
+- **Status:** ✅ 2 channels migrated (#linux-desktop-seed, #resume-customizer)
 
 ### Option B: Full Migration
 - Remove main→accountId binding entirely
@@ -471,9 +451,9 @@ sudo -u desktopuser openclaw gateway &
 ```
 
 ## Notes
-- Prod will maintain `main` agent for general channels (1491445641581301760, etc.)
-- New `resume-customizer` agent handles channel 1489035741341155408 (MIGRATED ✅)
-- New `linux-desktop-seed` agent handles only #linux-desktop-seed channel (1492701850217218268)
+- Prod will maintain `main` agent for general channels
+- New `resume-customizer` agent handles #resume-customizer channel (MIGRATED ✅)
+- New `linux-desktop-seed` agent handles only #linux-desktop-seed channel
 - This mirrors the test VM setup exactly
 - Both configs can coexist - prod handles more channels, test is proof-of-concept
 - **The key difference from prod current**: Adding per-channel routing without disrupting existing channel handlers
