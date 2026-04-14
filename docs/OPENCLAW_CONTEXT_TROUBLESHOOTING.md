@@ -1,6 +1,6 @@
 # OpenCLAW Context Management Troubleshooting Log
 
-**OpenCLAW Version:** v2026.3.28 (MiniMax compatible)
+**OpenCLAW Version:** v2026.04.11 (MiniMax compatible)
 **Last Updated:** 2026-04-13
 **Purpose:** Document context management issues and fixes for future reference
 
@@ -189,7 +189,7 @@ OPENCLAW_CONFIG_DIR="/home/desktopuser/.openclaw"
 ### Working Config Structure
 ```json
 {
-  "meta": { "lastTouchedVersion": "2026.3.28" },
+  "meta": { "lastTouchedVersion": "2026.04.11" },
   "channels": {
     "discord": {
       "enabled": true,

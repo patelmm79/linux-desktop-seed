@@ -1,6 +1,6 @@
 # Token Rotation Policy
 
-**OpenCLAW Version:** v2026.3.28 (MiniMax compatible)
+**OpenCLAW Version:** v2026.04.11 (MiniMax compatible)
 
 This document defines the rotation schedule and procedures for all secrets and API keys used in the desktop-seed deployment.
 

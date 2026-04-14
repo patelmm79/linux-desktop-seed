@@ -1,6 +1,6 @@
 # Using Your Remote Desktop
 
-**OpenCLAW Version:** v2026.3.28 (MiniMax compatible)
+**OpenCLAW Version:** v2026.04.11 (MiniMax compatible)
 
 This guide assumes you've already deployed the desktop and can connect via RDP. If you haven't done that yet, start with the [Quick Deploy](QUICK-DEPLOY.md) guide.
 

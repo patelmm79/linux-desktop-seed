@@ -1,6 +1,6 @@
 # OpenCLAW Configuration Files
 
-**OpenCLAW Version:** v2026.3.28 (MiniMax compatible)
+**OpenCLAW Version:** v2026.04.11 (MiniMax compatible)
 
 This directory contains the configuration templates and samples for OpenCLAW deployment.
 
@@ -36,7 +36,7 @@ This file is excluded from version control via `.gitignore`.
 
 The deployment script (`deploy-desktop.sh`) handles:
 
-1. **Version pinning**: OpenCLAW pinned to `2026.3.28` (MiniMax compatible)
+1. **Version pinning**: OpenCLAW pinned to `2026.04.11` (MiniMax compatible)
 2. **Config merge**: Copies defaults, preserves existing channels
 3. **Models setup**: Copies `models.json` with reasoning-enabled models
 4. **Auth**: Reads API keys from environment variables
