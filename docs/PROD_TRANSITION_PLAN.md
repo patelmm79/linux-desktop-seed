@@ -12,23 +12,23 @@ Transition the prod OpenCLAW configuration from the single-agent "main" structur
 
 ## Channel Mapping - CRITICAL PATH
 
-### Current Prod Channel List (all handled by `main` agent)
-| Channel ID | Channel Name | GitHub Owner | Current Handler |
-|------------|--------------|--------------|-----------------|
-| 1485047827737612362 | general | patelmm79 | main |
-| 1487986866832805888 | bond-nexus | DarojaAI | main |
-| 1488016789110526104 | dev-nexus | DarojaAI | main |
-| 1488028570977828974 | elastica | patelmm79 | main |
-| 1488329838606549174 | globalbitings | patelmm79 | main |
-| 1488649282792980550 | dev-nexus-frontend | DarojaAI | main |
-| 1489035741341155408 | resume-customizer | patelmm79 | main → resume-customizer ✅ MIGRATED |
-| 1489446562655637605 | dynamic-worlock | patelmm79 | main |
-| 1489451199185817630 | rag-research-tool | DarojaAI | main |
-| 1491175562348331209 | dev-nexus-action-agent | DarojaAI | main |
-| 1491445641581301760 | intelligent-feed | patelmm79 | main |
-| 1492017314693124106 | research-orchestrator | DarojaAI | main |
-| 1492701850217218268 | linux-desktop-seed | patelmm79 | main → linux-desktop-seed ✅ MIGRATED |
-| 1493278190540427395 | test-agent | patelmm79 | main |
+### Current Prod Channel List
+| Channel ID | Channel Name | GitHub Owner | Repo | Current Handler |
+|------------|--------------|--------------|------|-----------------|
+| 1485047827737612362 | general | patelmm79 | — | main (no repo) |
+| 1487986866832805888 | bond-nexus | DarojaAI | — | main → migrate |
+| 1488016789110526104 | dev-nexus | DarojaAI | — | main → migrate |
+| 1488028570977828974 | elastica | patelmm79 | — | main → migrate |
+| 1488329838606549174 | globalbitings | patelmm79 | — | main → migrate |
+| 1488649282792980550 | dev-nexus-frontend | DarojaAI | — | main → migrate |
+| 1489035741341155408 | resume-customizer | patelmm79 | patelmm79/resume-customizer | resume-customizer ✅ MIGRATED |
+| 1489446562655637605 | dynamic-worlock | patelmm79 | — | main → migrate |
+| 1489451199185817630 | rag-research-tool | DarojaAI | — | main → migrate |
+| 1491175562348331209 | dev-nexus-action-agent | DarojaAI | — | main → migrate |
+| 1491445641581301760 | intelligent-feed | patelmm79 | — | main → migrate |
+| 1492017314693124106 | research-orchestrator | DarojaAI | — | main → migrate |
+| 1492701850217218268 | linux-desktop-seed | patelmm79 | patelmm79/linux-desktop-seed | linux-desktop-seed ✅ MIGRATED |
+| 1493278190540427395 | test-agent | patelmm79 | — | main (no repo) |
 
 ### Migration Strategy
 The key insight is that **the existing binding uses `accountId`** which means any message from that user (accountId) goes to the main agent. To add per-repo routing:
