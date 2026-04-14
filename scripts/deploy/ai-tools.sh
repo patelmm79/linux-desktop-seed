@@ -108,10 +108,14 @@ EOF
 }
 
 # Setup OpenCLAW configuration
+# CRITICAL: Must use TARGET_USER's home, not $HOME, because this runs as root
 setup_openclaw_config() {
     log_step "Setting up OpenCLAW configuration..."
 
-    local openclaw_dir="$HOME/.openclaw"
+    # Use TARGET_USER's home directory explicitly, not $HOME (which resolves to /root when running as root)
+    local target_home
+    target_home=$(getent passwd "$TARGET_USER" | cut -d: -f6)
+    local openclaw_dir="$target_home/.openclaw"
     local config_file="$openclaw_dir/openclaw.json"
     local models_file="$openclaw_dir/agents/main/agent/models.json"
 
@@ -154,12 +158,10 @@ EOF
         fi
     fi
 
-    # Set ownership
-    if [[ -n "$TARGET_USER" ]]; then
-        chown -R "$TARGET_USER:$TARGET_USER" "$openclaw_dir"
-    fi
+    # Set ownership to TARGET_USER
+    chown -R "$TARGET_USER:$TARGET_USER" "$openclaw_dir"
 
-    log_info "OpenCLAW configuration complete"
+    log_info "OpenCLAW configuration complete for user $TARGET_USER"
 }
 
 # Export functions for use in main script

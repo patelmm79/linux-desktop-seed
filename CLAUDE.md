@@ -202,6 +202,19 @@ Monitor service watches continuously
 If crash detected → context logged → operator alerted
 ```
 
+### OpenCLAW Configuration Location
+
+**IMPORTANT:** OpenCLAW config must be in `desktopuser`'s home, never root's home.
+
+- Config path: `/home/desktopuser/.openclaw/openclaw.json`
+- Deployment script now uses `getent passwd "$TARGET_USER"` to determine the correct home directory
+- Never use `$HOME` when running as root - it resolves to `/root`
+
+Common issues:
+- Running `openclaw` as root creates `/root/.openclaw/` (wrong!)
+- Gateway may check root's config instead of desktopuser's
+- Fix: Always run openclaw commands as desktopuser or via `sudo -u desktopuser`
+
 ## Workflow for Bug Fixes
 
 **CRITICAL RULE:** When user reports a VM issue, fix the **deployment scripts**, not just the remote machine.

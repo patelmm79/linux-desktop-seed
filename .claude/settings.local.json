@@ -28,7 +28,26 @@
       "Skill(commit-commands:commit-push-pr)",
       "Bash(gh pr:*)",
       "Bash(xargs grep:*)",
-      "Bash(scp:*)"
+      "Bash(scp:*)",
+      "WebFetch(domain:github.com)",
+      "Read(//c/Users/insan/.ssh/**)",
+      "Bash(name=\"description\">Start gateway as desktopuser directly)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:docs.openclaw.ai)",
+      "Bash(where python3:*)",
+      "Bash(where python:*)",
+      "Bash(dir \"C:\\\\Users\\\\insan\\\\PycharmProjects\\\\desktop-seed\")",
+      "Bash(findstr -i venv)",
+      "Bash(sudo -u desktopuser cat /home/desktopuser/.openclaw/runtime.env)",
+      "Bash(cmd:*)",
+      "Bash(/c/Python313/python.exe:*)",
+      "Bash(C:\\\\Users\\\\insan\\\\PycharmProjects\\\\desktop-seed\\\\.venv\\\\Scripts\\\\python3.exe:*)",
+      "Bash(export PATH=\"/c/Users/insan/PycharmProjects/desktop-seed/.venv/Scripts:$PATH\")",
+      "Bash(chmod +x:*)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('channels',{}\\).get\\('discord',{}\\), indent=2\\)\\)\")",
+      "Bash(python3 -c ':*)",
+      "WebFetch(domain:openrouter.ai)",
+      "WebFetch(domain:docs.openrouter.ai)"
     ]
   }
 }
