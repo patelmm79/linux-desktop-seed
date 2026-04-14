@@ -25,7 +25,7 @@ install_openclaw() {
     log_step "Installing OpenCLAW..."
 
     # Pin to specific version to avoid breaking changes (especially for MiniMax model compatibility)
-    local OPENCLAW_VERSION="2026.3.28"
+    local OPENCLAW_VERSION="2026.04.11"
 
     # Check if already installed with correct version
     if command -v openclaw &> /dev/null; then
@@ -133,7 +133,7 @@ setup_openclaw_config() {
             cat > "$config_file" << 'EOF'
 {
   "meta": {
-    "lastTouchedVersion": "2026.3.28"
+    "lastTouchedVersion": "2026.04.11"
   },
   "agents": {
     "defaults": {
