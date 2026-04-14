@@ -16,17 +16,17 @@ Transition the prod OpenCLAW configuration from the single-agent "main" structur
 | Channel ID | Channel Name | GitHub Owner | Repo | Current Handler |
 |------------|--------------|--------------|------|-----------------|
 | 1485047827737612362 | general | patelmm79 | — | main (no repo) |
-| 1487986866832805888 | bond-nexus | DarojaAI | — | main → migrate |
-| 1488016789110526104 | dev-nexus | DarojaAI | — | main → migrate |
-| 1488028570977828974 | elastica | patelmm79 | — | main → migrate |
-| 1488329838606549174 | globalbitings | patelmm79 | — | main → migrate |
-| 1488649282792980550 | dev-nexus-frontend | DarojaAI | — | main → migrate |
+| 1487986866832805888 | bond-nexus | DarojaAI | DarojaAI/bond-nexus | bond-nexus ✅ MIGRATED |
+| 1488016789110526104 | dev-nexus | DarojaAI | DarojaAI/dev-nexus | dev-nexus ✅ MIGRATED |
+| 1488028570977828974 | elastica | patelmm79 | patelmm79/elastica | elastica ✅ MIGRATED |
+| 1488329838606549174 | globalbitings | patelmm79 | patelmm79/globalbitings | globalbitings ✅ MIGRATED |
+| 1488649282792980550 | dev-nexus-frontend | DarojaAI | DarojaAI/dev-nexus-frontend | dev-nexus-frontend ✅ MIGRATED |
 | 1489035741341155408 | resume-customizer | patelmm79 | patelmm79/resume-customizer | resume-customizer ✅ MIGRATED |
-| 1489446562655637605 | dynamic-worlock | patelmm79 | — | main → migrate |
-| 1489451199185817630 | rag-research-tool | DarojaAI | — | main → migrate |
-| 1491175562348331209 | dev-nexus-action-agent | DarojaAI | — | main → migrate |
-| 1491445641581301760 | intelligent-feed | patelmm79 | — | main → migrate |
-| 1492017314693124106 | research-orchestrator | DarojaAI | — | main → migrate |
+| 1489446562655637605 | dynamic-worlock | patelmm79 | patelmm79/dynamic-worlock | dynamic-worlock ✅ MIGRATED |
+| 1489451199185817630 | rag-research-tool | DarojaAI | DarojaAI/rag-research-tool | rag-research-tool ✅ MIGRATED |
+| 1491175562348331209 | dev-nexus-action-agent | DarojaAI | DarojaAI/dev-nexus-action-agent | dev-nexus-action-agent ✅ MIGRATED |
+| 1491445641581301760 | intelligent-feed | patelmm79 | patelmm79/intelligent-feed | intelligent-feed ✅ MIGRATED |
+| 1492017314693124106 | research-orchestrator | DarojaAI | DarojaAI/research-orchestrator | research-orchestrator ✅ MIGRATED |
 | 1492701850217218268 | linux-desktop-seed | patelmm79 | patelmm79/linux-desktop-seed | linux-desktop-seed ✅ MIGRATED |
 | 1493278190540427395 | test-agent | patelmm79 | — | main (no repo) |
 
