@@ -190,11 +190,18 @@ The `channels.discord.guilds` section lists all allowed channels. For the migrat
 
 This mirrors the test config exactly - the channel 1492701850217218268 has `requireMention: false` so the linux-desktop-seed agent responds without needing @mention.
 
-### Phase 3: Create Agent Directory Structure
+### Phase 3: Create Agent Directory Structure with Memory
 On prod VM:
 ```bash
-# Create agent directory
+# Create agent directory with ALL required subdirectories
 mkdir -p /home/desktopuser/.openclaw/agents/linux-desktop-seed/agent
+mkdir -p /home/desktopuser/.openclaw/agents/linux-desktop-seed/agent/memory    # ← CRITICAL: per-agent memory
+mkdir -p /home/desktopuser/.openclaw/agents/linux-desktop-seed/sessions
+mkdir -p /home/desktopuser/.openclaw/agents/linux-desktop-seed/mcp-servers
+
+# Copy models.json from main agent (required for model availability)
+cp /home/desktopuser/.openclaw/agents/main/agent/models.json \
+   /home/desktopuser/.openclaw/agents/linux-desktop-seed/agent/models.json
 
 # Create agent config.json
 cat > /home/desktopuser/.openclaw/agents/linux-desktop-seed/agent/config.json << 'EOF'
@@ -218,12 +225,47 @@ cat > /home/desktopuser/.openclaw/agents/linux-desktop-seed/agent/config.json <<
 }
 EOF
 
-# Set ownership
+# Copy auth profiles from main (or create repo-specific)
+cp /home/desktopuser/.openclaw/agents/main/agent/auth-profiles.json \
+   /home/desktopuser/.openclaw/agents/linux-desktop-seed/agent/auth-profiles.json 2>/dev/null || true
+
+# Set ownership - CRITICAL for security
 chown -R desktopuser:desktopuser /home/desktopuser/.openclaw/agents/linux-desktop-seed
+chmod -R 700 /home/desktopuser/.openclaw/agents/linux-desktop-seed/agent/memory  # ← private memory
 
 # Create workspace directory
 mkdir -p /home/desktopuser/Projects/linux-desktop-seed
 chown desktopuser:desktopuser /home/desktopuser/Projects
+```
+
+**Directory Structure After Setup:**
+```
+/home/desktopuser/.openclaw/agents/linux-desktop-seed/
+├── agent/
+│   ├── config.json        # agent-specific settings (model, compaction, workspace)
+│   ├── models.json        # copied from main
+│   ├── auth-profiles.json # copied from main (or repo-specific key)
+│   ├── memory/            # ← ISOLATED PER-AGENT MEMORY (currently empty)
+│   └── sessions/          # ← ISOLATED PER-AGENT SESSIONS
+├── mcp-servers/
+└── (other runtime dirs)
+```
+
+**Key Points:**
+- Each agent's `memory/` directory is completely isolated
+- The linux-desktop-seed agent will ONLY read/write to its own memory/
+- This ensures one repo's conversation history doesn't leak to another repo
+- Memory is stored as: `agents/{agent-id}/agent/memory/`
+
+### Phase 3b: Verify Memory Isolation (Before Gateway Start)
+```bash
+# Verify memory directory exists and is empty BEFORE first use
+ls -la /home/desktopuser/.openclaw/agents/linux-desktop-seed/agent/memory/
+# Expected: empty (only . and ..)
+
+# Verify ownership is correct
+stat -c "%U:%G %a" /home/desktopuser/.openclaw/agents/linux-desktop-seed/agent/memory
+# Expected: desktopuser:desktopuser 700
 ```
 
 ### Phase 4: Add Git Remote to Workspace
@@ -274,11 +316,84 @@ tail -50 /home/desktopuser/.openclaw/logs/gateway.log | grep -i "route\|bind\|ch
 - Restart gateway
 - The backup keeps the original single-binding structure
 
-### Phase 8: Post-Migration (Optional - After Verification)
-Once verified, you can optionally:
-- Add more per-repo agents (e.g., `bond-nexus` agent for bond-nexus repo)
-- Migrate more channels to dedicated agents
-- Remove the main agent entirely if all channels have dedicated agents
+### Phase 9: Test ONE Repository with Rollback Plan
+
+**Objective:** Validate the new per-repo agent structure with exactly ONE channel before committing to full migration.
+
+#### Step 9.1: Verify Single Channel Works
+```bash
+# Send test message to #linux-desktop-seed channel (1492701850217218268)
+# Format: "Hello, what repo am I working with?"
+```
+
+**Expected response should include:**
+- Repo URL: `https://github.com/patelmm79/linux-desktop-seed.git`
+- Local path: `/home/desktopuser/Projects/linux-desktop-seed`
+- Model: `MiniMax-M2.7`
+
+#### Step 9.2: Verify Memory Isolation
+```bash
+# Check that linux-desktop-seed agent created its own memory files
+ls -la /home/desktopuser/.openclaw/agents/linux-desktop-seed/agent/memory/
+
+# Verify main agent memory is SEPARATE
+ls -la /home/desktopuser/.openclaw/agents/main/agent/memory/
+```
+
+**Expected:** Each agent has its own memory/ directory with separate files.
+
+#### Step 9.3: Verify Existing Channels Unaffected
+```bash
+# Send test message to #general (1485047827737612362)
+# Should still route to main agent
+```
+
+**Expected:** Existing channels continue working with main agent.
+
+#### Step 9.4: IF ANYTHING FAILS → ROLLBACK
+```bash
+# IMMEDIATE ROLLBACK - restore backup
+pkill -f 'openclaw gateway' || true
+
+# Restore original config
+cp /home/desktopuser/.openclaw/openclaw.json.backup-prod-legacy /home/desktopuser/.openclaw/openclaw.json
+
+# Remove the new agent directory (optional cleanup)
+rm -rf /home/desktopuser/.openclaw/agents/linux-desktop-seed
+
+# Restart gateway with original config
+sudo -u desktopuser openclaw gateway > /tmp/openclaw-gateway.log 2>&1 &
+
+# Wait 30 seconds, check logs
+sleep 30
+tail -20 /home/desktopuser/.openclaw/logs/gateway.log
+```
+
+**Rollback Success Criteria:**
+- [ ] Gateway starts without errors
+- [ ] All 17 channels route to main agent
+- [ ] No mention of "linux-desktop-seed" in logs
+- [ ] Prod behavior identical to pre-migration
+
+#### Step 9.5: IF SUCCESSFUL → Continue or Expand
+Only after Phase 9 is fully validated:
+- [ ] New channel routes correctly to linux-desktop-seed agent
+- [ ] Agent responds with correct repo info
+- [ ] Memory files created in agent-specific directory
+- [ ] Existing channels still work with main agent
+
+**Then you can:**
+- Continue to Phase 10 (add more agents)
+- Or leave as single-agent-test and monitor for 24-48 hours
+
+### Phase 10: Expand to More Repos (Optional)
+After successful test, add more per-repo agents:
+```bash
+# Example: Add bond-nexus agent
+mkdir -p /home/desktopuser/.openclaw/agents/bond-nexus/agent/memory
+mkdir -p /home/desktopuser/.openclaw/agents/bond-nexus/sessions
+# ... copy config, update bindings, restart gateway
+```
 
 ## Rollback Procedure
 If issues occur:
