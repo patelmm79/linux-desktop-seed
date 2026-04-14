@@ -1,7 +1,9 @@
 {
   "meta": {
-    "lastTouchedVersion": "2026.3.28",
-    "lastTouchedAt": "2026-04-13T00:00:00Z"
+    "name": "OpenCLAW Ideal Configuration",
+    "description": "Production-ready per-repo agent routing configuration",
+    "lastUpdated": "2026-04-14T05:15:00Z",
+    "version": "2026.4.14"
   },
   "auth": {
     "profiles": {
@@ -25,9 +27,19 @@
       }
     },
     "list": [
-      {
-        "id": "main"
-      }
+      { "id": "main" },
+      { "id": "resume-customizer", "name": "resume-customizer", "workspace": "/home/desktopuser/GithubProjects/resume-customizer", "agentDir": "/home/desktopuser/.openclaw/agents/resume-customizer/agent" },
+      { "id": "bond-nexus", "name": "bond-nexus", "workspace": "/home/desktopuser/GithubProjects/bond-nexus", "agentDir": "/home/desktopuser/.openclaw/agents/bond-nexus/agent" },
+      { "id": "dev-nexus", "name": "dev-nexus", "workspace": "/home/desktopuser/GithubProjects/dev-nexus", "agentDir": "/home/desktopuser/.openclaw/agents/dev-nexus/agent" },
+      { "id": "elastica", "name": "elastica", "workspace": "/home/desktopuser/GithubProjects/elastica", "agentDir": "/home/desktopuser/.openclaw/agents/elastica/agent" },
+      { "id": "globalbitings", "name": "globalbitings", "workspace": "/home/desktopuser/GithubProjects/globalbitings", "agentDir": "/home/desktopuser/.openclaw/agents/globalbitings/agent" },
+      { "id": "dev-nexus-frontend", "name": "dev-nexus-frontend", "workspace": "/home/desktopuser/GithubProjects/dev-nexus-frontend", "agentDir": "/home/desktopuser/.openclaw/agents/dev-nexus-frontend/agent" },
+      { "id": "dynamic-worlock", "name": "dynamic-worlock", "workspace": "/home/desktopuser/GithubProjects/dynamic-worlock", "agentDir": "/home/desktopuser/.openclaw/agents/dynamic-worlock/agent" },
+      { "id": "rag-research-tool", "name": "rag-research-tool", "workspace": "/home/desktopuser/GithubProjects/rag-research-tool", "agentDir": "/home/desktopuser/.openclaw/agents/rag-research-tool/agent" },
+      { "id": "dev-nexus-action-agent", "name": "dev-nexus-action-agent", "workspace": "/home/desktopuser/GithubProjects/dev-nexus-action-agent", "agentDir": "/home/desktopuser/.openclaw/agents/dev-nexus-action-agent/agent" },
+      { "id": "intelligent-feed", "name": "intelligent-feed", "workspace": "/home/desktopuser/GithubProjects/intelligent-feed", "agentDir": "/home/desktopuser/.openclaw/agents/intelligent-feed/agent" },
+      { "id": "research-orchestrator", "name": "research-orchestrator", "workspace": "/home/desktopuser/GithubProjects/research-orchestrator", "agentDir": "/home/desktopuser/.openclaw/agents/research-orchestrator/agent" },
+      { "id": "linux-desktop-seed", "name": "linux-desktop-seed", "workspace": "/home/desktopuser/Projects/linux-desktop-seed", "agentDir": "/home/desktopuser/.openclaw/agents/linux-desktop-seed/agent" }
     ]
   },
   "channels": {
@@ -35,34 +47,27 @@
       "enabled": true,
       "token": "DISCORD_BOT_TOKEN_PLACEHOLDER",
       "groupPolicy": "allowlist",
-      "streaming": "off",
-      "allowFrom": [
-        "user:DISCORD_USER_ID_PLACEHOLDER"
-      ],
+      "streaming": { "mode": "off" },
+      "allowFrom": [ "user:1162240440322502656" ],
       "guilds": {
-        "DISCORD_GUILD_ID_PLACEHOLDER": {
+        "1485047825967480862": {
           "requireMention": false,
-          "users": [
-            "DISCORD_USER_ID_PLACEHOLDER"
-          ],
+          "users": [ "1162240440322502656" ],
           "channels": {
-            "DISCORD_CHANNEL_ID_1": {},
-            "DISCORD_CHANNEL_ID_2": {},
-            "DISCORD_CHANNEL_ID_3": {},
-            "DISCORD_CHANNEL_ID_4": {},
-            "DISCORD_CHANNEL_ID_5": {},
-            "DISCORD_CHANNEL_ID_6": {},
-            "DISCORD_CHANNEL_ID_7": {},
-            "DISCORD_CHANNEL_ID_8": {},
-            "DISCORD_CHANNEL_ID_9": {},
-            "DISCORD_CHANNEL_ID_10": {},
-            "DISCORD_CHANNEL_ID_11": {},
-            "DISCORD_CHANNEL_ID_12": {},
-            "DISCORD_CHANNEL_ID_13": {},
-            "DISCORD_CHANNEL_ID_14": {},
-            "DISCORD_CHANNEL_ID_15": {},
-            "DISCORD_CHANNEL_ID_16": {},
-            "DISCORD_CHANNEL_ID_17": {}
+            "1485047827737612362": {},
+            "1487986866832805888": { "requireMention": false },
+            "1488016789110526104": { "requireMention": false },
+            "1488028570977828974": { "requireMention": false },
+            "1488329838606549174": { "requireMention": false },
+            "1488649282792980550": { "requireMention": false },
+            "1489035741341155408": { "requireMention": false },
+            "1489446562655637605": { "requireMention": false },
+            "1489451199185817630": { "requireMention": false },
+            "1491175562348331209": { "requireMention": false },
+            "1491445641581301760": { "requireMention": false },
+            "1492017314693124106": { "requireMention": false },
+            "1492701850217218268": { "requireMention": false },
+            "1493278190540427395": {}
           }
         }
       }
@@ -72,54 +77,46 @@
     "port": 18789,
     "mode": "local",
     "bind": "loopback",
-    "controlUi": {
-      "allowInsecureAuth": false
-    },
-    "auth": {
-      "mode": "token",
-      "token": "GATEWAY_AUTH_TOKEN_PLACEHOLDER"
-    }
+    "controlUi": { "allowInsecureAuth": false },
+    "auth": { "mode": "token", "token": "GATEWAY_AUTH_TOKEN_PLACEHOLDER" }
   },
   "bindings": [
-    {
-      "agentId": "main",
-      "match": {
-        "channel": "discord",
-        "accountId": "DISCORD_ACCOUNT_ID_PLACEHOLDER"
-      }
-    }
+    { "type": "route", "agentId": "linux-desktop-seed", "match": { "channel": "discord", "peer": { "kind": "channel", "id": "1492701850217218268" } } },
+    { "type": "route", "agentId": "research-orchestrator", "match": { "channel": "discord", "peer": { "kind": "channel", "id": "1492017314693124106" } } },
+    { "type": "route", "agentId": "intelligent-feed", "match": { "channel": "discord", "peer": { "kind": "channel", "id": "1491445641581301760" } } },
+    { "type": "route", "agentId": "dev-nexus-action-agent", "match": { "channel": "discord", "peer": { "kind": "channel", "id": "1491175562348331209" } } },
+    { "type": "route", "agentId": "rag-research-tool", "match": { "channel": "discord", "peer": { "kind": "channel", "id": "1489451199185817630" } } },
+    { "type": "route", "agentId": "dynamic-worlock", "match": { "channel": "discord", "peer": { "kind": "channel", "id": "1489446562655637605" } } },
+    { "type": "route", "agentId": "dev-nexus-frontend", "match": { "channel": "discord", "peer": { "kind": "channel", "id": "1488649282792980550" } } },
+    { "type": "route", "agentId": "globalbitings", "match": { "channel": "discord", "peer": { "kind": "channel", "id": "1488329838606549174" } } },
+    { "type": "route", "agentId": "elastica", "match": { "channel": "discord", "peer": { "kind": "channel", "id": "1488028570977828974" } } },
+    { "type": "route", "agentId": "dev-nexus", "match": { "channel": "discord", "peer": { "kind": "channel", "id": "1488016789110526104" } } },
+    { "type": "route", "agentId": "bond-nexus", "match": { "channel": "discord", "peer": { "kind": "channel", "id": "1487986866832805888" } } },
+    { "type": "route", "agentId": "resume-customizer", "match": { "channel": "discord", "peer": { "kind": "channel", "id": "1489035741341155408" } } }
   ],
   "models": {
     "mode": "merge",
     "providers": {
       "openrouter": {
         "apiKey": "ENV_PLACEHOLDER",
-        "headers": {
-          "HTTP-Referer": "https://github.com/patelmm79/ubuntu-8gb-hel1-1",
-          "X-Title": "ubuntu-8gb-hel1-1"
-        },
         "baseUrl": "https://openrouter.ai/api/v1",
         "api": "openai-completions",
         "injectNumCtxForOpenAICompat": true,
+        "headers": {
+          "HTTP-Referer": "https://github.com/patelmm79/ubuntu-8gb-hel1-2",
+          "X-Title": "ubuntu-8gb-hel1-2"
+        },
         "models": [
-          {
-            "id": "minimax/MiniMax-M2.7",
-            "name": "MiniMax-M2.7",
-            "api": "openai-completions",
-            "reasoning": true,
-            "input": [
-              "text",
-              "image"
-            ],
-            "contextWindow": 100000,
-            "maxTokens": 8192,
-            "cost": {
-              "input": 0.0,
-              "output": 0.0
-            }
-          }
+          { "id": "minimax/MiniMax-M2.7", "name": "MiniMax-M2.7", "api": "openai-completions", "reasoning": true, "input": ["text", "image"], "contextWindow": 100000, "maxTokens": 8192, "cost": { "input": 0.0, "output": 0.0 } },
+          { "id": "anthropic/claude-haiku-4-5", "name": "Claude Haiku 4.5", "api": "openai-completions", "reasoning": false, "input": ["text", "image"], "contextWindow": 200000, "maxTokens": 8192, "cost": { "input": 8e-7, "output": 0.000004 } }
         ]
       }
     }
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true,
+    "ownerDisplay": "raw"
   }
 }
