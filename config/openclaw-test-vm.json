@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "name": "Test VM OpenCLAW Configuration",
+    "description": "Working config for test VM with per-repo agent routing",
+    "lastUpdated": "2026-04-14T01:35:00Z"
+  },
+  "auth": {
+    "profiles": {
+      "openrouter:default": {
+        "provider": "openrouter",
+        "mode": "api_key"
+      }
+    }
+  },
+  "channels": {
+    "discord": {
+      "enabled": true,
+      "token": "DISCORD_BOT_TOKEN_PLACEHOLDER",
+      "groupPolicy": "allowlist",
+      "streaming": {
+        "mode": "off"
+      },
+      "allowFrom": [
+        "user:1162240440322502656"
+      ],
+      "guilds": {
+        "1485047825967480862": {
+          "requireMention": false,
+          "users": [
+            "1162240440322502656"
+          ],
+          "channels": {
+            "1485047827737612362": {},
+            "1487986866832805888": {},
+            "1488016789110526104": {},
+            "1488028570977828974": {},
+            "1488329838606549174": {},
+            "1488649282792980550": {},
+            "1489035741341155408": {},
+            "1489446562655637605": {},
+            "1489451199185817630": {},
+            "1491175562348331209": {},
+            "1491445641581301760": {},
+            "1492017314693124106": {},
+            "1492701850217218268": {
+              "requireMention": false
+            },
+            "1493278190540427395": {}
+          }
+        }
+      }
+    }
+  },
+  "gateway": {
+    "mode": "local",
+    "bind": "loopback",
+    "auth": {
+      "token": "GATEWAY_AUTH_TOKEN_PLACEHOLDER"
+    }
+  },
+  "wizard": {
+    "lastRunAt": "2026-04-13T07:35:20.411Z",
+    "lastRunVersion": "2026.4.11",
+    "lastRunCommand": "doctor",
+    "lastRunMode": "local"
+  },
+  "meta": {
+    "lastTouchedVersion": "2026.4.11",
+    "lastTouchedAt": "2026-04-14T00:13:19.769Z"
+  },
+  "agents": {
+    "list": [
+      {
+        "id": "main"
+      },
+      {
+        "id": "linux-desktop-seed",
+        "name": "linux-desktop-seed",
+        "workspace": "/home/desktopuser/Projects/linux-desktop-seed",
+        "agentDir": "/home/desktopuser/.openclaw/agents/linux-desktop-seed/agent"
+      }
+    ],
+    "defaults": {
+      "model": "openrouter/minimax/MiniMax-M2.7",
+      "thinkingDefault": "minimal",
+      "compaction": {
+        "mode": "safeguard",
+        "reserveTokens": 15000,
+        "keepRecentTokens": 4000,
+        "reserveTokensFloor": 20000,
+        "maxHistoryShare": 0.1,
+        "model": "openrouter/anthropic/claude-haiku-4-5"
+      }
+    }
+  },
+  "bindings": [
+    {
+      "type": "route",
+      "agentId": "linux-desktop-seed",
+      "match": {
+        "channel": "discord",
+        "peer": {
+          "kind": "channel",
+          "id": "1492701850217218268"
+        }
+      }
+    }
+  ],
+  "plugins": {
+    "entries": {
+      "openrouter": {
+        "enabled": true
+      }
+    }
+  },
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "openrouter": {
+        "baseUrl": "https://openrouter.ai/api/v1",
+        "apiKey": "ENV_PLACEHOLDER",
+        "api": "openai-completions",
+        "injectNumCtxForOpenAICompat": true,
+        "headers": {
+          "HTTP-Referer": "https://github.com/patelmm79/ubuntu-8gb-hel1-2",
+          "X-Title": "ubuntu-8gb-hel1-2"
+        },
+        "models": [
+          {
+            "id": "minimax/MiniMax-M2.7",
+            "name": "MiniMax-M2.7",
+            "api": "openai-completions",
+            "reasoning": true,
+            "input": [
+              "text",
+              "image"
+            ],
+            "cost": {
+              "input": 0,
+              "output": 0
+            },
+            "contextWindow": 100000,
+            "maxTokens": 8192
+          },
+          {
+            "id": "anthropic/claude-haiku-4-5",
+            "name": "Claude Haiku 4.5",
+            "api": "openai-completions",
+            "reasoning": false,
+            "input": [
+              "text",
+              "image"
+            ],
+            "cost": {
+              "input": 8e-7,
+              "output": 0.000004
+            },
+            "contextWindow": 200000,
+            "maxTokens": 8192
+          }
+        ]
+      }
+    }
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true,
+    "ownerDisplay": "raw"
+  }
+}
