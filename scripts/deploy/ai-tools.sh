@@ -20,12 +20,41 @@ else
 fi
 unset _lib_sh_dir
 
+# Clean up old OpenCLAW npm artifacts to prevent deprecated dependency warnings
+cleanup_openclaw_npm() {
+    log_info "Cleaning up old OpenCLAW npm artifacts..."
+
+    local npm_global_path
+    npm_global_path=$(npm root -g 2>/dev/null || echo "/usr/lib/node_modules")
+
+    # Remove old OpenCLAW npm package directory
+    if [[ -d "$npm_global_path/openclaw" ]]; then
+        rm -rf "$npm_global_path/openclaw"
+        log_info "Removed old OpenCLAW npm package"
+    fi
+
+    # Remove any orphaned symlinks
+    rm -f /usr/bin/openclaw 2>/dev/null || true
+    rm -f /usr/local/bin/openclaw 2>/dev/null || true
+
+    # Clean npm cache to remove stale dependency references
+    npm cache clean --force 2>/dev/null || true
+
+    log_info "NPM cleanup complete"
+}
+
+# Get the latest available OpenCLAW version from npm
+get_latest_openclaw_version() {
+    npm show openclaw version 2>/dev/null || echo ""
+}
+
 # Install OpenCLAW AI client
 install_openclaw() {
     log_step "Installing OpenCLAW..."
 
-    # Pin to specific version to avoid breaking changes (especially for MiniMax model compatibility)
-    local OPENCLAW_VERSION="2026.04.11"
+    # Default to pinned version for stability (especially for MiniMax model compatibility)
+    # Override via OPENCLAW_VERSION environment variable to get latest
+    local OPENCLAW_VERSION="${OPENCLAW_VERSION:-2026.04.11}"
 
     # Check if already installed with correct version
     if command -v openclaw &> /dev/null; then
@@ -36,7 +65,8 @@ install_openclaw() {
             return 0
         else
             log_warn "OpenCLAW version mismatch: $oc_version, reinstalling to $OPENCLAW_VERSION..."
-            npm uninstall -g openclaw 2>/dev/null || true
+            # Clean up old npm artifacts before reinstalling to avoid deprecated dependency warnings
+            cleanup_openclaw_npm
         fi
     fi
 
@@ -46,6 +76,8 @@ install_openclaw() {
         log_info "Installing Node.js for OpenCLAW..."
         if ! apt-get install -y nodejs npm 2>&1 | grep -q "Err\|Failed"; then
             log_info "Node.js installed"
+            # Clean up any pre-existing npm artifacts from the nodejs package
+            cleanup_openclaw_npm
         else
             log_warn "Failed to install Node.js"
         fi
@@ -165,4 +197,4 @@ EOF
 }
 
 # Export functions for use in main script
-export -f install_openclaw setup_openclaw_wrapper setup_openclaw_config
+export -f install_openclaw setup_openclaw_wrapper setup_openclaw_config cleanup_openclaw_npm get_latest_openclaw_version

@@ -25,27 +25,17 @@
       ],
       "guilds": {
         "1485047825967480862": {
-          "requireMention": false,
+          "requireMention": true,
           "users": [
             "1162240440322502656"
           ],
           "channels": {
-            "1485047827737612362": {},
-            "1487986866832805888": {},
-            "1488016789110526104": {},
-            "1488028570977828974": {},
-            "1488329838606549174": {},
-            "1488649282792980550": {},
-            "1489035741341155408": {},
-            "1489446562655637605": {},
-            "1489451199185817630": {},
-            "1491175562348331209": {},
-            "1491445641581301760": {},
-            "1492017314693124106": {},
             "1492701850217218268": {
               "requireMention": false
             },
-            "1493278190540427395": {}
+            "1493278190540427395": {
+              "requireMention": false
+            }
           }
         }
       }
@@ -78,6 +68,12 @@
         "name": "linux-desktop-seed",
         "workspace": "/home/desktopuser/Projects/linux-desktop-seed",
         "agentDir": "/home/desktopuser/.openclaw/agents/linux-desktop-seed/agent"
+      },
+      {
+        "id": "test-agent",
+        "name": "test-agent",
+        "workspace": "/home/desktopuser/Projects/test-agent",
+        "agentDir": "/home/desktopuser/.openclaw/agents/test-agent/agent"
       }
     ],
     "defaults": {
@@ -102,6 +98,17 @@
         "peer": {
           "kind": "channel",
           "id": "1492701850217218268"
+        }
+      }
+    },
+    {
+      "type": "route",
+      "agentId": "test-agent",
+      "match": {
+        "channel": "discord",
+        "peer": {
+          "kind": "channel",
+          "id": "1493278190540427395"
         }
       }
     }

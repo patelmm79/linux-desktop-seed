@@ -28,7 +28,7 @@ Transition the prod OpenCLAW configuration from the single-agent "main" structur
 | intelligent-feed | patelmm79 | patelmm79/intelligent-feed | intelligent-feed ✅ MIGRATED |
 | research-orchestrator | DarojaAI | DarojaAI/research-orchestrator | research-orchestrator ✅ MIGRATED |
 | linux-desktop-seed | patelmm79 | patelmm79/linux-desktop-seed | linux-desktop-seed ✅ MIGRATED |
-| test-agent | patelmm79 | — | main (no repo) |
+| test-agent | patelmm79 | — | test-agent ✅ CONFIGURED |
 
 ### Migration Strategy
 The key insight is that **the existing binding uses `accountId`** which means any message from that user (accountId) goes to the main agent. To add per-repo routing:
@@ -40,13 +40,14 @@ The key insight is that **the existing binding uses `accountId`** which means an
 This is non-disruptive: existing channels still route to `main`, only #linux-desktop-seed gets a new handler.
 
 ## Target Test Config Structure
-- Three agents: `main` + `linux-desktop-seed` + `resume-customizer` (per-repo)
+- Three agents: `main` + `linux-desktop-seed` + `test-agent` (per-repo)
 - Default model: `openrouter/minimax/MiniMax-M2.7`
 - Per-channel routing:
   - linux-desktop-seed agent → #linux-desktop-seed channel
-  - resume-customizer agent → #resume-customizer channel ✅ MIGRATED
-- Agent-specific workspace: `/home/desktopuser/Projects/linux-desktop-seed`
+  - test-agent → #test-agent channel
+- Agent-specific workspace: `/home/desktopuser/Projects/[agent-name]`
 - 2 models: MiniMax-M2.7, Claude Haiku
+- **Channel restriction pattern**: Guild-level `requireMention: true` with exceptions for allowed channels
 
 ## Transition Steps
 
@@ -168,7 +169,9 @@ The `channels.discord.guilds` section lists all allowed channels. For the migrat
   "linux-desktop-seed": {
     "requireMention": false
   },
-  "test-agent": {}
+  "test-agent": {
+    "requireMention": false
+  }
 }
 ```
 
