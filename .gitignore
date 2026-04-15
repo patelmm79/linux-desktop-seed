@@ -1,3 +1,6 @@
+# Private documentation (sensitive environment info)
+docs-private/
+
 # Worktrees
 .worktrees/
 worktrees/
