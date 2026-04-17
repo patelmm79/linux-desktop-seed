@@ -1,24 +1,24 @@
 # OpenCLAW Configuration Governance
 
-## Architecture: Single Config Source
+## Architecture: Single User Setup
 
-The gateway runs as root but reads config from **desktopuser's home**. This is configured via systemd override:
+The gateway runs as **desktopuser** (not root). All OpenCLAW artifacts live under desktopuser's home directory:
 
-```
-# /home/desktopuser/.config/systemd/user/openclaw-gateway.service.d/override.conf
-[Service]
-Environment=HOME=/home/desktopuser
-Environment=OPENROUTER_API_KEY=sk-or-v1-...
-```
+- **Service**: `/home/desktopuser/.config/systemd/user/openclaw-gateway.service`
+- **Override**: `/home/desktopuser/.config/systemd/user/openclaw-gateway.service.d/override.conf`
+- **Config**: `/home/desktopuser/.openclaw/openclaw.json`
+- **Skills**: `/home/desktopuser/.openclaw/skills/`
+- **Binary**: `/usr/local/bin/openclaw` → `/home/desktopuser/.npm-global/bin/openclaw`
 
 **Why this matters:**
 - Single source of truth: `/home/desktopuser/.openclaw/openclaw.json`
-- No sync step needed between desktopuser and root
-- Config is locked (444) and governed by the scripts below
+- No confusion between root and desktopuser configs
+- Skills loaded from desktopuser's directory
+- Gateway runs as desktopuser, reads desktopuser's config
 
 ## Overview
 
-The OpenCLAW config (`/home/desktopuser/.openclaw/openclaw.json`) is **LOCKED BY DEFAULT**. This prevents accidental corruption from:
+The OpenCLAW config (`/home/desktopuser/.openclaw/openclaw.json`) is **LOCKED BY DEFAULT** (444). This prevents accidental corruption from:
 - `openclaw doctor --fix` auto-migrations
 - Development tasks accidentally editing the file
 - System updates modifying configuration
@@ -77,24 +77,19 @@ The OpenCLAW config (`/home/desktopuser/.openclaw/openclaw.json`) is **LOCKED BY
    /usr/local/bin/openclaw-validate-config.sh
    ```
 
-9. **Sync to Root** - Copy to root's config (required)
+9. **Lock** - Re-lock the config
    ```bash
-   cp /home/desktopuser/.openclaw/openclaw.json /root/.openclaw/openclaw.json
+   /usr/local/bin/openclaw-lock-config.sh lock
    ```
 
-10. **Lock** - Re-lock the config
-    ```bash
-    /usr/local/bin/openclaw-lock-config.sh lock
-    ```
-
-11. **Restart** - Restart the gateway
+10. **Restart** - Restart the gateway
     ```bash
     systemctl --user restart openclaw-gateway.service
     ```
 
-12. **Verify** - Check Discord integration works
+11. **Verify** - Check Discord integration works
     ```bash
-    journalctl --user -u openclaw-gateway.service -f | grep discord
+    journalctl --user -u openclaw-gateway.service | grep discord | tail -20
     ```
 
 ### Emergency Change Flow
@@ -124,16 +119,12 @@ The OpenRouter API key is stored in:
 
 To update the API key:
 ```bash
-# Edit the override (requires unlock first)
-sudo /usr/local/bin/openclaw-lock-config.sh unlock
+# Edit the override
 nano /home/desktopuser/.config/systemd/user/openclaw-gateway.service.d/override.conf
 
 # Reload and restart
 systemctl --user daemon-reload
 systemctl --user restart openclaw-gateway.service
-
-# Lock it back
-sudo /usr/local/bin/openclaw-lock-config.sh lock
 ```
 
 ## If Config Breaks
@@ -154,9 +145,8 @@ sudo /usr/local/bin/openclaw-lock-config.sh lock
    /usr/local/bin/openclaw-validate-config.sh
    ```
 
-4. **Sync and restart**
+4. **Restart**
    ```bash
-   cp /home/desktopuser/.openclaw/openclaw.json /root/.openclaw/openclaw.json
    systemctl --user restart openclaw-gateway.service
    ```
 
@@ -168,12 +158,23 @@ All governance scripts are in `/usr/local/bin/`:
 - `openclaw-backup-config.sh` - Create backups
 - `openclaw-change-request.sh` - Change request workflow
 
+## OpenCLAW Skills
+
+Skills for agents are located at:
+- `/home/desktopuser/.openclaw/skills/`
+
+Example skill structure:
+```
+/home/desktopuser/.openclaw/skills/openclaw-usage/SKILL.md
+```
+
 ## Previous Incidents
 
 | Date | Issue | Root Cause | Fix |
 |------|-------|------------|-----|
 | 2026-04-15 | Gateway failed to start | Config corrupted by `openclaw doctor --fix` | Restored from backup |
 | 2026-04-17 | Discord 401 errors | Missing API key after config restore | Added systemd override |
+| 2026-04-17 | Gateway running as root | Dual config causing confusion | Migrated to single-user (desktopuser) setup |
 
 ---
 
