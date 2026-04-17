@@ -102,6 +102,7 @@ main() {
     setup_openclaw_validate_config
     setup_openclaw_backup_config
     setup_openclaw_change_request
+    setup_openclaw_systemd_override
 
     # Configuration
     setup_environment

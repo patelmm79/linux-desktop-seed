@@ -662,5 +662,36 @@ EOF
     log_info "OpenCLAW configuration complete for user $TARGET_USER"
 }
 
+# Setup OpenCLAW systemd override for API key persistence
+setup_openclaw_systemd_override() {
+    log_step "Setting up OpenCLAW systemd override for API key persistence..."
+
+    # Get the target user's home directory
+    local target_home
+    target_home=$(getent passwd "$TARGET_USER" | cut -d: -f6)
+    local override_dir="$target_home/.config/systemd/user/openclaw-gateway.service.d"
+    local override_file="$override_dir/override.conf"
+
+    # API key value (hardcoded for deployment, should be injected via env var in production)
+    local api_key="${OPENROUTER_API_KEY:-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}"
+
+    # Create the directory structure
+    mkdir -p "$override_dir"
+
+    # Create the override.conf file
+    cat > "$override_file" << EOF
+[Service]
+# Persist environment variables across restarts
+Environment=OPENROUTER_API_KEY=$api_key
+Environment=HOME=/root
+Environment=XDG_RUNTIME_DIR=/run/user/0
+EOF
+
+    # Set ownership to TARGET_USER
+    chown -R "$TARGET_USER:$TARGET_USER" "$target_home/.config"
+
+    log_info "OpenCLAW systemd override created at $override_file"
+}
+
 # Export functions for use in main script
-export -f install_openclaw setup_openclaw_wrapper setup_openclaw_config setup_openclaw_lock_config setup_openclaw_validate_config setup_openclaw_backup_config setup_openclaw_change_request cleanup_openclaw_npm get_latest_openclaw_version
+export -f install_openclaw setup_openclaw_wrapper setup_openclaw_config setup_openclaw_lock_config setup_openclaw_validate_config setup_openclaw_backup_config setup_openclaw_change_request cleanup_openclaw_npm get_latest_openclaw_version setup_openclaw_systemd_override
