@@ -32,21 +32,21 @@ The OpenCLAW config (`/home/desktopuser/.openclaw/openclaw.json`) is **LOCKED BY
 | Action | Command |
 |--------|---------|
 | Check status | `/usr/local/bin/openclaw-lock-config.sh status` |
-| Unlock for changes | `/usr/local/bin/openclaw-lock-config.sh unlock` |
-| Lock after changes | `/usr/local/bin/openclaw-lock-config.sh lock` |
-| Validate config | `/usr/local/bin/openclaw-validate-config.sh` |
-| Create backup | `/usr/local/bin/openclaw-backup-config.sh` |
-| Change request | `/usr/local/bin/openclaw-change-request.sh request "description"` |
+| Create request | `/usr/local/bin/openclaw-change-request.sh request "description"` |
 | Approve change | `/usr/local/bin/openclaw-change-request.sh approve <id>` |
+| Apply change | `/usr/local/bin/openclaw-change-request.sh apply <id>` |
+| Validate & lock | `/usr/local/bin/openclaw-change-request.sh validate-and-lock <id>` |
+| View change log | `/usr/local/bin/openclaw-change-request.sh show <id>` |
 
 ## Governance Process
 
 ### Normal Change Flow
 
-1. **Request** - Create change request with description
+1. **Request** - Agent creates change request with description
    ```bash
    /usr/local/bin/openclaw-change-request.sh request "Add new Discord channel"
    ```
+   Returns request ID (e.g., `cr-20260417-215031`)
 
 2. **Review** - Milan reviews the request
 
@@ -54,43 +54,45 @@ The OpenCLAW config (`/home/desktopuser/.openclaw/openclaw.json`) is **LOCKED BY
    ```bash
    /usr/local/bin/openclaw-change-request.sh approve cr-YYYYMMDD-HHMMSS
    ```
+   Creates approval file with timestamp
 
-4. **Backup** - Automated backup created before any changes
+4. **Apply** - Agent runs apply which:
+   - Creates timestamped backup
+   - Unlocks config (644)
+   - Prompts for edit
 
-5. **Unlock** - Config is temporarily unlocked
+5. **Validate & Lock** - After editing:
    ```bash
-   /usr/local/bin/openclaw-lock-config.sh unlock
+   /usr/local/bin/openclaw-change-request.sh validate-and-lock cr-YYYYMMDD-HHMMSS
+   ```
+   This:
+   - Validates JSON is valid
+   - Locks config (444)
+   - Logs diff to approval file
+
+6. **Restart** - Restart the gateway
+   ```bash
+   systemctl --user restart openclaw-gateway.service
    ```
 
-6. **Validate** - Run pre-flight validation
+7. **Verify** - Check Discord integration works
    ```bash
-   /usr/local/bin/openclaw-validate-config.sh
+   journalctl --user -u openclaw-gateway.service | grep discord | tail -20
    ```
 
-7. **Edit** - Make the required changes
-   ```bash
-   nano /home/desktopuser/.openclaw/openclaw.json
-   ```
+### Change Audit Trail
 
-8. **Validate Again** - Ensure changes are valid
-   ```bash
-   /usr/local/bin/openclaw-validate-config.sh
-   ```
+Every change is logged to the approval file:
+```bash
+# View what changed
+/usr/local/bin/openclaw-change-request.sh show cr-YYYYMMDD-HHMMSS
+```
 
-9. **Lock** - Re-lock the config
-   ```bash
-   /usr/local/bin/openclaw-lock-config.sh lock
-   ```
-
-10. **Restart** - Restart the gateway
-    ```bash
-    systemctl --user restart openclaw-gateway.service
-    ```
-
-11. **Verify** - Check Discord integration works
-    ```bash
-    journalctl --user -u openclaw-gateway.service | grep discord | tail -20
-    ```
+The log includes:
+- Approval timestamp
+- Who approved
+- Backup file used
+- Full diff of changes
 
 ### Emergency Change Flow
 
@@ -109,7 +111,7 @@ For urgent fixes (production down):
 | File permissions | `chmod 444` (read-only) | Prevents accidental writes |
 | Validation | `jq` schema checks | Catches config errors before restart |
 | Backup | Timestamped copies | Enables rollback |
-| Audit | Git commit history | Tracks all changes |
+| Change logging | Diff logged to approval file | Full audit trail of what changed |
 
 ## API Key Management
 
