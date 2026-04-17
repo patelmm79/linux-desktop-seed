@@ -214,6 +214,115 @@ EOF
     log_info "OpenCLAW lock config script created at $lock_script"
 }
 
+# Setup OpenCLAW config validation script
+setup_openclaw_validate_config() {
+    log_step "Setting up OpenCLAW config validation script..."
+
+    local validate_script="/usr/local/bin/openclaw-validate-config.sh"
+
+    cat > "$validate_script" << 'EOF'
+#!/bin/bash
+# /usr/local/bin/openclaw-validate-config.sh
+# Validates OpenCLAW config before any change or restart
+
+set -euo pipefail
+
+CONFIG_FILE="${1:-/home/desktopuser/.openclaw/openclaw.json}"
+ERRORS=0
+
+echo "=== OpenCLAW Config Validation ==="
+echo "Config: $CONFIG_FILE"
+echo ""
+
+# Check file exists
+if [[ ! -f "$CONFIG_FILE" ]]; then
+    echo "ERROR: Config file not found: $CONFIG_FILE"
+    exit 1
+fi
+
+# Check valid JSON
+echo "[1/7] Checking JSON validity..."
+if ! jq -e '.' "$CONFIG_FILE" >/dev/null 2>&1; then
+    echo "ERROR: Invalid JSON"
+    ERRORS=$((ERRORS + 1))
+else
+    echo "  OK: Valid JSON"
+fi
+
+# Check required sections exist
+echo "[2/7] Checking required sections..."
+for section in "meta" "models" "channels" "bindings"; do
+    if ! jq -e "has(\"$section\")" "$CONFIG_FILE" >/dev/null 2>&1; then
+        echo "ERROR: Missing required section: $section"
+        ERRORS=$((ERRORS + 1))
+    else
+        echo "  OK: Section '$section' exists"
+    fi
+done
+
+# Check models.providers.openrouter
+echo "[3/7] Checking provider configuration..."
+if jq -e '.models.providers.openrouter | has("baseUrl")' "$CONFIG_FILE" >/dev/null 2>&1; then
+    echo "  OK: baseUrl present"
+else
+    echo "ERROR: Missing models.providers.openrouter.baseUrl"
+    ERRORS=$((ERRORS + 1))
+fi
+
+if jq -e '.models.providers.openrouter | has("models")' "$CONFIG_FILE" >/dev/null 2>&1; then
+    MODEL_COUNT=$(jq '.models.providers.openrouter.models | length' "$CONFIG_FILE")
+    echo "  OK: models array present ($MODEL_COUNT models)"
+else
+    echo "ERROR: Missing models.providers.openrouter.models"
+    ERRORS=$((ERRORS + 1))
+fi
+
+# Check bindings format
+echo "[4/7] Checking bindings..."
+BINDING_COUNT=$(jq '.bindings | length' "$CONFIG_FILE" 2>/dev/null || echo "0")
+echo "  Found $BINDING_COUNT bindings"
+
+# Check Discord config
+echo "[5/7] Checking Discord configuration..."
+if jq -e '.channels.discord.enabled == true' "$CONFIG_FILE" >/dev/null 2>&1; then
+    echo "  OK: Discord enabled"
+else
+    echo "WARNING: Discord not enabled"
+fi
+
+# Check Discord token exists (not placeholder)
+DISCORD_TOKEN=$(jq -r '.channels.discord.token // empty' "$CONFIG_FILE")
+if [[ -n "$DISCORD_TOKEN" && "$DISCORD_TOKEN" != "DISCORD_BOT_TOKEN_PLACEHOLDER" ]]; then
+    echo "  OK: Discord token present"
+else
+    echo "WARNING: Discord token missing or is placeholder"
+fi
+
+# Check gateway config
+echo "[6/7] Checking gateway configuration..."
+if jq -e '.gateway.mode' "$CONFIG_FILE" >/dev/null 2>&1; then
+    echo "  OK: Gateway mode: $(jq -r '.gateway.mode' "$CONFIG_FILE")"
+else
+    echo "ERROR: Missing gateway.mode - this will prevent startup!"
+    ERRORS=$((ERRORS + 1))
+fi
+
+# Summary
+echo "[7/7] Summary"
+echo ""
+if [[ $ERRORS -gt 0 ]]; then
+    echo "RESULT: FAILED with $ERRORS error(s)"
+    exit 1
+else
+    echo "RESULT: PASSED - Config is valid"
+    exit 0
+fi
+EOF
+
+    chmod +x "$validate_script"
+    log_info "OpenCLAW config validation script created at $validate_script"
+}
+
 # Setup OpenCLAW configuration
 # CRITICAL: Must use TARGET_USER's home, not $HOME, because this runs as root
 setup_openclaw_config() {
@@ -272,4 +381,4 @@ EOF
 }
 
 # Export functions for use in main script
-export -f install_openclaw setup_openclaw_wrapper setup_openclaw_config setup_openclaw_lock_config cleanup_openclaw_npm get_latest_openclaw_version
+export -f install_openclaw setup_openclaw_wrapper setup_openclaw_config setup_openclaw_lock_config setup_openclaw_validate_config cleanup_openclaw_npm get_latest_openclaw_version
