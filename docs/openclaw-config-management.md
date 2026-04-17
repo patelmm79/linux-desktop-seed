@@ -1,8 +1,24 @@
 # OpenCLAW Configuration Governance
 
+## Architecture: Single Config Source
+
+The gateway runs as root but reads config from **desktopuser's home**. This is configured via systemd override:
+
+```
+# /home/desktopuser/.config/systemd/user/openclaw-gateway.service.d/override.conf
+[Service]
+Environment=HOME=/home/desktopuser
+Environment=OPENROUTER_API_KEY=sk-or-v1-...
+```
+
+**Why this matters:**
+- Single source of truth: `/home/desktopuser/.openclaw/openclaw.json`
+- No sync step needed between desktopuser and root
+- Config is locked (444) and governed by the scripts below
+
 ## Overview
 
-The OpenCLAW config (`~/.openclaw/openclaw.json`) is **LOCKED BY DEFAULT**. This prevents accidental corruption from:
+The OpenCLAW config (`/home/desktopuser/.openclaw/openclaw.json`) is **LOCKED BY DEFAULT**. This prevents accidental corruption from:
 - `openclaw doctor --fix` auto-migrations
 - Development tasks accidentally editing the file
 - System updates modifying configuration
