@@ -100,6 +100,7 @@ main() {
     setup_openclaw_config
     setup_openclaw_lock_config
     setup_openclaw_validate_config
+    setup_openclaw_backup_config
 
     # Configuration
     setup_environment

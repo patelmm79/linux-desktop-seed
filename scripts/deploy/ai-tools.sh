@@ -323,6 +323,51 @@ EOF
     log_info "OpenCLAW config validation script created at $validate_script"
 }
 
+# Setup OpenCLAW config backup script
+setup_openclaw_backup_config() {
+    log_step "Setting up OpenCLAW config backup script..."
+
+    local backup_script="/usr/local/bin/openclaw-backup-config.sh"
+
+    cat > "$backup_script" << 'EOF'
+#!/bin/bash
+# /usr/local/bin/openclaw-backup-config.sh
+# Creates timestamped backups of OpenCLAW config
+
+set -euo pipefail
+
+CONFIG_DIR="/home/desktopuser/.openclaw"
+ROOT_CONFIG_DIR="/root/.openclaw"
+BACKUP_DIR="$CONFIG_DIR"
+TIMESTAMP=$(date +%Y-%m-%dT%H-%M-%S)
+
+echo "=== OpenCLAW Config Backup ==="
+echo "Timestamp: $TIMESTAMP"
+
+# Backup desktopuser config
+if [[ -f "$CONFIG_DIR/openclaw.json" ]]; then
+    cp "$CONFIG_DIR/openclaw.json" "$BACKUP_DIR/openclaw-backup.$TIMESTAMP.json"
+    echo "Backed up: $CONFIG_DIR/openclaw.json -> openclaw-backup.$TIMESTAMP.json"
+fi
+
+# Sync to root config
+if [[ -f "$ROOT_CONFIG_DIR/openclaw.json" ]]; then
+    cp "$ROOT_CONFIG_DIR/openclaw.json" "$BACKUP_DIR/openclaw-root-backup.$TIMESTAMP.json"
+    echo "Backed up: $ROOT_CONFIG_DIR/openclaw.json -> openclaw-root-backup.$TIMESTAMP.json"
+fi
+
+# Keep only last 10 backups (rotate old ones)
+cd "$BACKUP_DIR"
+ls -1 openclaw-backup.*.json 2>/dev/null | tail -n +11 | xargs -r rm
+ls -1 openclaw-root-backup.*.json 2>/dev/null | tail -n +11 | xargs -r rm
+
+echo "Backup complete"
+EOF
+
+    chmod +x "$backup_script"
+    log_info "OpenCLAW config backup script created at $backup_script"
+}
+
 # Setup OpenCLAW configuration
 # CRITICAL: Must use TARGET_USER's home, not $HOME, because this runs as root
 setup_openclaw_config() {
@@ -381,4 +426,4 @@ EOF
 }
 
 # Export functions for use in main script
-export -f install_openclaw setup_openclaw_wrapper setup_openclaw_config setup_openclaw_lock_config setup_openclaw_validate_config cleanup_openclaw_npm get_latest_openclaw_version
+export -f install_openclaw setup_openclaw_wrapper setup_openclaw_config setup_openclaw_lock_config setup_openclaw_validate_config setup_openclaw_backup_config cleanup_openclaw_npm get_latest_openclaw_version
