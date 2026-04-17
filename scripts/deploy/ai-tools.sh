@@ -139,6 +139,81 @@ EOF
     log_info "OpenCLAW wrapper created at $wrapper_path"
 }
 
+# Setup OpenCLAW config lock/unlock wrapper
+setup_openclaw_lock_config() {
+    log_step "Setting up OpenCLAW config lock script..."
+
+    local lock_script="/usr/local/bin/openclaw-lock-config.sh"
+
+    cat > "$lock_script" << 'EOF'
+#!/bin/bash
+# /usr/local/bin/openclaw-lock-config.sh
+# Locks or unlocks the OpenCLAW config file
+
+set -euo pipefail
+
+CONFIG_FILE="/home/desktopuser/.openclaw/openclaw.json"
+ROOT_CONFIG_FILE="/root/.openclaw/openclaw.json"
+
+show_usage() {
+    echo "Usage: $0 [lock|unlock|status]"
+    echo "  lock   - Make config read-only (444)"
+    echo "  unlock - Make config writable (644) for changes"
+    echo "  status - Show current permission state"
+    exit 1
+}
+
+get_perms() {
+    stat -c "%a" "$CONFIG_FILE" 2>/dev/null || echo "none"
+}
+
+do_status() {
+    local perms
+    perms=$(get_perms)
+    echo "Config: $CONFIG_FILE"
+    echo "Permissions: $perms"
+
+    if [[ "$perms" == "444" ]]; then
+        echo "Status: LOCKED (read-only)"
+    elif [[ "$perms" == "644" ]]; then
+        echo "Status: UNLOCKED (writable)"
+    else
+        echo "Status: UNKNOWN"
+    fi
+}
+
+do_lock() {
+    echo "Locking config..."
+    chmod 444 "$CONFIG_FILE"
+    chown desktopuser:desktopuser "$CONFIG_FILE"
+    chmod 444 "$ROOT_CONFIG_FILE"
+    chown root:root "$ROOT_CONFIG_FILE"
+    echo "Config locked (read-only)"
+    do_status
+}
+
+do_unlock() {
+    echo "Unlocking config..."
+    chmod 644 "$CONFIG_FILE"
+    chown desktopuser:desktopuser "$CONFIG_FILE"
+    chmod 644 "$ROOT_CONFIG_FILE"
+    chown root:root "$ROOT_CONFIG_FILE"
+    echo "Config unlocked (writable)"
+    do_status
+}
+
+case "${1:-status}" in
+    lock) do_lock ;;
+    unlock) do_unlock ;;
+    status) do_status ;;
+    *) show_usage ;;
+esac
+EOF
+
+    chmod +x "$lock_script"
+    log_info "OpenCLAW lock config script created at $lock_script"
+}
+
 # Setup OpenCLAW configuration
 # CRITICAL: Must use TARGET_USER's home, not $HOME, because this runs as root
 setup_openclaw_config() {
@@ -197,4 +272,4 @@ EOF
 }
 
 # Export functions for use in main script
-export -f install_openclaw setup_openclaw_wrapper setup_openclaw_config cleanup_openclaw_npm get_latest_openclaw_version
+export -f install_openclaw setup_openclaw_wrapper setup_openclaw_config setup_openclaw_lock_config cleanup_openclaw_npm get_latest_openclaw_version

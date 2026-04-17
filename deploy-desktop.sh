@@ -98,6 +98,7 @@ main() {
     install_openclaw
     setup_openclaw_wrapper
     setup_openclaw_config
+    setup_openclaw_lock_config
 
     # Configuration
     setup_environment
