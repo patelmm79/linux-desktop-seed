@@ -1,209 +1,164 @@
-# OpenCLAW Configuration Management
+# OpenCLAW Configuration Governance
 
 ## Overview
 
-OpenCLAW configuration is managed through a strict lockdown process to prevent accidental breakage that causes service outages.
+The OpenCLAW config (`~/.openclaw/openclaw.json`) is **LOCKED BY DEFAULT**. This prevents accidental corruption from:
+- `openclaw doctor --fix` auto-migrations
+- Development tasks accidentally editing the file
+- System updates modifying configuration
 
-## Files
+## The Golden Rule
 
-| File | Location | Purpose |
-|------|----------|---------|
-| Active config | `~/.openclaw/openclaw.json` | Live config on VM (read-only) |
-| Timestamped ideal | `~/.openclaw/openclaw-ideal-config.YYYY-MM-DD.json` | Working config with secrets (VM only) |
-| Git ideal config | `config/openclaw-ideal-config.json` | Reference config in git (NO secrets - placeholders only) |
-| Validation | `/usr/local/bin/validate-openclaw-config.sh` | Config validation before start |
-| Wrapper | `/home/desktopuser/bin/openclaw-start.sh` | Starts OpenCLAW with validation |
+**NEVER edit openclaw.json directly without following the governance process.**
 
-## After Any Config Change: Save Ideal
+## Quick Reference
 
-**Before making any change that affects production, ALWAYS save a timestamped backup:**
+| Action | Command |
+|--------|---------|
+| Check status | `/usr/local/bin/openclaw-lock-config.sh status` |
+| Unlock for changes | `/usr/local/bin/openclaw-lock-config.sh unlock` |
+| Lock after changes | `/usr/local/bin/openclaw-lock-config.sh lock` |
+| Validate config | `/usr/local/bin/openclaw-validate-config.sh` |
+| Create backup | `/usr/local/bin/openclaw-backup-config.sh` |
+| Change request | `/usr/local/bin/openclaw-change-request.sh request "description"` |
+| Approve change | `/usr/local/bin/openclaw-change-request.sh approve <id>` |
 
+## Governance Process
+
+### Normal Change Flow
+
+1. **Request** - Create change request with description
+   ```bash
+   /usr/local/bin/openclaw-change-request.sh request "Add new Discord channel"
+   ```
+
+2. **Review** - Milan reviews the request
+
+3. **Approve** - Milan approves the change
+   ```bash
+   /usr/local/bin/openclaw-change-request.sh approve cr-YYYYMMDD-HHMMSS
+   ```
+
+4. **Backup** - Automated backup created before any changes
+
+5. **Unlock** - Config is temporarily unlocked
+   ```bash
+   /usr/local/bin/openclaw-lock-config.sh unlock
+   ```
+
+6. **Validate** - Run pre-flight validation
+   ```bash
+   /usr/local/bin/openclaw-validate-config.sh
+   ```
+
+7. **Edit** - Make the required changes
+   ```bash
+   nano /home/desktopuser/.openclaw/openclaw.json
+   ```
+
+8. **Validate Again** - Ensure changes are valid
+   ```bash
+   /usr/local/bin/openclaw-validate-config.sh
+   ```
+
+9. **Sync to Root** - Copy to root's config (required)
+   ```bash
+   cp /home/desktopuser/.openclaw/openclaw.json /root/.openclaw/openclaw.json
+   ```
+
+10. **Lock** - Re-lock the config
+    ```bash
+    /usr/local/bin/openclaw-lock-config.sh lock
+    ```
+
+11. **Restart** - Restart the gateway
+    ```bash
+    systemctl --user restart openclaw-gateway.service
+    ```
+
+12. **Verify** - Check Discord integration works
+    ```bash
+    journalctl --user -u openclaw-gateway.service -f | grep discord
+    ```
+
+### Emergency Change Flow
+
+For urgent fixes (production down):
+
+1. Make the fix
+2. Run validation
+3. Restart service
+4. Get post-hoc approval from Milan
+5. Document the change
+
+## Protection Layers
+
+| Layer | Mechanism | Purpose |
+|-------|-----------|---------|
+| File permissions | `chmod 444` (read-only) | Prevents accidental writes |
+| Validation | `jq` schema checks | Catches config errors before restart |
+| Backup | Timestamped copies | Enables rollback |
+| Audit | Git commit history | Tracks all changes |
+
+## API Key Management
+
+The OpenRouter API key is stored in:
+- **Systemd override**: `/home/desktopuser/.config/systemd/user/openclaw-gateway.service.d/override.conf`
+- **NOT in config file**: Uses `ENV_PLACEHOLDER` which resolves to the env var
+
+To update the API key:
 ```bash
-# On VM - save with today's date
-cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw-ideal-config.2026-04-13.json
+# Edit the override (requires unlock first)
+sudo /usr/local/bin/openclaw-lock-config.sh unlock
+nano /home/desktopuser/.config/systemd/user/openclaw-gateway.service.d/override.conf
 
-# Then sanitize for git (remove secrets)
-# Replace actual IDs with placeholders, then copy to repo
+# Reload and restart
+systemctl --user daemon-reload
+systemctl --user restart openclaw-gateway.service
+
+# Lock it back
+sudo /usr/local/bin/openclaw-lock-config.sh lock
 ```
-
-**The process:**
-1. Make config change on VM
-2. Test it works
-3. Save timestamped copy: `openclaw-ideal-config.YYYY-MM-DD.json`
-4. Sanitize with placeholders and save to `config/openclaw-ideal-config.json` in repo
-
-## Quick Restore (When Things Break)
-
-**If OpenCLAW stops responding to Discord:**
-
-```bash
-# Step 1: Kill existing processes
-ssh prod "sudo pkill -u desktopuser openclaw"
-
-# Step 2: Restore from latest timestamped ideal (or .bak)
-ssh prod "cp /home/desktopuser/.openclaw/openclaw-ideal-config.2026-04-13.json /home/desktopuser/.openclaw/openclaw.json"
-
-# Step 3: Start with correct environment
-ssh prod "sudo -u desktopuser bash -c 'openclaw gateway --port 18789' &"
-
-# Step 4: Verify
-ssh prod "sudo -u desktopuser bash -c 'openclaw status'" | grep -A2 Discord
-```
-
-**The golden rule:** When in doubt, restore from `openclaw.json.bak` or the latest `openclaw-ideal-config.*.json` — never guess at values.
-
-## Lockdown Rules
-
-### Never Do
-- ❌ Edit config without understanding current state
-- ❌ Restart without validating first
-- ❌ Make unprompted config changes
-- ❌ Leave root config out of sync with desktopuser config
-
-### Always Do
-- ✅ Propose changes with justification
-- ✅ Explain failure risk
-- ✅ Run validation before restart
-- ✅ Test after any change
-
-## Validation
-
-The validation script (`/usr/local/bin/validate-openclaw-config.sh`) checks:
-1. Valid JSON syntax
-2. Required `agents.defaults.model` exists
-3. Model format is valid (alphanumeric, `/`, `.`, `-`, `_`)
-4. Required `.models.providers` fields (baseUrl, apiKey, models)
-
-### Run Validation
-```bash
-ssh hetzner "/usr/local/bin/validate-openclaw-config.sh"
-```
-
-### Start with Validation
-```bash
-ssh hetzner "/home/desktopuser/bin/openclaw-start.sh"
-```
-
-## Restarting Gateway
-
-After config changes, restart the gateway:
-
-```bash
-# Sync config to root (required - service runs as root)
-ssh hetzner "cp /home/desktopuser/.openclaw/openclaw.json /root/.openclaw/openclaw.json"
-
-# Restart as user
-ssh hetzner "systemctl --user restart openclaw-gateway.service"
-
-# Verify
-ssh hetzner "systemctl --user status openclaw-gateway.service --no-pager | head -8"
-```
-
-## Making Config Changes
-
-1. **Propose** - Explain what field, why, failure risk
-2. **Get approval** - Wait for explicit permission
-3. **Validate first** - Run validation script
-4. **Make minimal change** - Only what's approved
-5. **Test** - Health check after restart
-
-## Backup & Rollback
-
-Config is read-only (`chmod 444`) to prevent accidental modification. To make changes:
-
-```bash
-# Temporarily make writable (requires explicit permission)
-ssh hetzner "sudo chmod 644 /home/desktopuser/.openclaw/openclaw.json"
-
-# Edit config
-ssh hetzner "nano /home/desktopuser/.openclaw/openclaw.json"
-
-# Restore read-only
-ssh hetzner "sudo chmod 444 /home/desktopuser/.openclaw/openclaw.json"
-```
-
-## Environment-Only Secrets
-
-The ideal config contains NO secrets. Sensitive data comes from:
-
-- Environment variables (set in wrapper or systemd)
-- Or `~/.openclaw/runtime.env` (outside git)
-
-This allows the config file to be public without security risk.
 
 ## If Config Breaks
 
-1. **Check validation** - Run validation script for specific error
-2. **Restore from .bak** - ALWAYS use `~/.openclaw/openclaw.json.bak` as the source of truth
-3. **Reset to ideal** - Copy from `config/openclaw-ideal-config.json`
-4. **Test** - Health check after any fix
+1. **Check the lock status**
+   ```bash
+   /usr/local/bin/openclaw-lock-config.sh status
+   ```
 
-## Emergency Recovery (Critical)
+2. **Restore from backup**
+   ```bash
+   ls -lt /home/desktopuser/.openclaw/openclaw-backup.*.json | head -1
+   cp /home/desktopuser/.openclaw/openclaw-backup.2026-04-17T17-00-00.json /home/desktopuser/.openclaw/openclaw.json
+   ```
 
-**When OpenCLAW stops responding to Discord:**
+3. **Validate**
+   ```bash
+   /usr/local/bin/openclaw-validate-config.sh
+   ```
 
-### Step 1: Get the authoritative config
-```bash
-# ALWAYS start here - the .bak file is the source of truth
-cat ~/.openclaw/openclaw.json.bak
-```
+4. **Sync and restart**
+   ```bash
+   cp /home/desktopuser/.openclaw/openclaw.json /root/.openclaw/openclaw.json
+   systemctl --user restart openclaw-gateway.service
+   ```
 
-### Step 2: Check what's currently active
-```bash
-openclaw config get bindings
-openclaw config get channels.discord
-```
+## Scripts Location
 
-### Step 3: Restore from .bak if unsure
-```bash
-# Kill existing gateway first
-pkill -f openclaw-gateway
+All governance scripts are in `/usr/local/bin/`:
+- `openclaw-lock-config.sh` - Lock/unlock config
+- `openclaw-validate-config.sh` - Validate config syntax
+- `openclaw-backup-config.sh` - Create backups
+- `openclaw-change-request.sh` - Change request workflow
 
-# Restore from known-good backup
-cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json
-chown desktopuser:desktopuser ~/.openclaw/openclaw.json
+## Previous Incidents
 
-# Sync to root (required - service runs as root)
-cp ~/.openclaw/openclaw.json /root/.openclaw/openclaw.json
-```
-
-### Step 4: Start with correct environment
-```bash
-# CRITICAL: Set HOME to desktopuser, not root
-HOME=/home/desktopuser XDG_CONFIG_HOME=/home/desktopuser/.config openclaw gateway
-```
-
-### Step 5: Verify
-```bash
-# Check Discord connected
-tail -50 openclaw.log | grep -i discord
-
-# Verify channel binding
-openclaw config get bindings
-```
-
-## Common Breakage Causes
-
-| Cause | Prevention |
-|-------|------------|
-| Running as root creates `/root/.openclaw` | Always set `HOME=/home/desktopuser` |
-| Manually editing instead of using .bak | ALWAYS restore from `.bak` first |
-| Guessing channel IDs | Use `.bak` file to get correct channel |
-| Missing environment vars | Use `XDG_CONFIG_HOME` and `HOME` |
-
-## Key Insight
-
-The `.bak` file contains the **exact working config** including correct Discord channel IDs. When in doubt:
-- **Read .bak first** - it's the authoritative source
-- **Verify with CLI second** - `openclaw config get`
-- **Test third** - send a message to the Discord channel
-
-Never guess at channel IDs or config values. The .bak has the answers.
-
-## Autostart
-
-OpenCLAW starts via XDG autostart (`~/.config/autostart/openclaw-gateway.desktop`) which calls the wrapper script with validation.
+| Date | Issue | Root Cause | Fix |
+|------|-------|------------|-----|
+| 2026-04-15 | Gateway failed to start | Config corrupted by `openclaw doctor --fix` | Restored from backup |
+| 2026-04-17 | Discord 401 errors | Missing API key after config restore | Added systemd override |
 
 ---
 
-**Last Updated:** 2026-04-13
+**Last Updated:** 2026-04-17
