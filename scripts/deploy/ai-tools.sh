@@ -368,6 +368,243 @@ EOF
     log_info "OpenCLAW config backup script created at $backup_script"
 }
 
+# Setup OpenCLAW change request governance workflow
+setup_openclaw_change_request() {
+    log_step "Setting up OpenCLAW change request governance script..."
+
+    local change_request_script="/usr/local/bin/openclaw-change-request.sh"
+
+    cat > "$change_request_script" << 'EOF'
+#!/bin/bash
+# /usr/local/bin/openclaw-change-request.sh
+# Enforces governance process for config changes
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+CONFIG_FILE="/home/desktopuser/.openclaw/openclaw.json"
+ROOT_CONFIG_FILE="/root/.openclaw/openclaw.json"
+CONFIG_DIR="/home/desktopuser/.openclaw"
+LOCK_SCRIPT="$SCRIPT_DIR/openclaw-lock-config.sh"
+VALIDATE_SCRIPT="$SCRIPT_DIR/openclaw-validate-config.sh"
+BACKUP_SCRIPT="$SCRIPT_DIR/openclaw-backup-config.sh"
+
+show_usage() {
+    cat <<EOF
+OpenCLAW Configuration Change Request
+
+Usage: $0 [request|approve|apply|status]
+
+Workflow:
+  1. request <description>  - Create a change request (requires approval)
+  2. approve <request_id>   - Approve a pending change (Milan only)
+  3. apply <request_id>     - Apply an approved change
+  4. status                 - Show pending requests
+
+Governance Rules:
+  - Config is LOCKED by default (read-only)
+  - Any change requires: backup -> validate -> approve -> apply
+  - Only Milan can approve changes
+  - Emergency changes require post-hoc approval
+
+Examples:
+  $0 request "Add new Discord channel for dev-nexus"
+  $0 approve cr-001
+  $0 apply cr-001
+EOF
+    exit 1
+}
+
+do_request() {
+    local description="$*"
+    local request_id="cr-$(date +%Y%m%d-%H%M%S)"
+
+    if [[ -z "$description" ]]; then
+        echo "ERROR: Description required"
+        exit 1
+    fi
+
+    # Create request tracking directory
+    mkdir -p "$CONFIG_DIR/requests"
+
+    # Create request file
+    cat > "$CONFIG_DIR/requests/$request_id.json" << REQEOF
+{
+  "request_id": "$request_id",
+  "description": "$description",
+  "requested_by": "$(whoami)",
+  "timestamp": "$(date -Iseconds)",
+  "status": "pending"
+}
+REQEOF
+
+    echo "=== Change Request: $request_id ==="
+    echo "Description: $description"
+    echo "Requested by: $(whoami)"
+    echo "Timestamp: $(date -Iseconds)"
+    echo ""
+    echo "NEXT STEPS:"
+    echo "  1. Milan reviews the request"
+    echo "  2. Milan runs: $0 approve $request_id"
+    echo "  3. After approval, changes can be applied"
+    echo ""
+    echo "Request saved to: $CONFIG_DIR/requests/$request_id.json"
+}
+
+do_approve() {
+    local request_id="$1"
+
+    if [[ -z "$request_id" ]]; then
+        echo "ERROR: Request ID required"
+        echo "Usage: $0 approve <request_id>"
+        exit 1
+    fi
+
+    local request_file="$CONFIG_DIR/requests/$request_id.json"
+    if [[ ! -f "$request_file" ]]; then
+        echo "ERROR: Request not found: $request_id"
+        echo "Available requests:"
+        ls -1 "$CONFIG_DIR/requests/" 2>/dev/null || echo "  (none)"
+        exit 1
+    fi
+
+    # Verify approver is Milan (root or desktopuser on the VM)
+    local approver="$(whoami)"
+    if [[ "$approver" != "root" && "$approver" != "desktopuser" ]]; then
+        echo "ERROR: Only Milan can approve changes"
+        exit 1
+    fi
+
+    # Update request status to approved
+    local approval_timestamp
+    approval_timestamp=$(date -Iseconds)
+    jq ".status = \"approved\" | .approved_by = \"$approver\" | .approval_timestamp = \"$approval_timestamp\"" "$request_file" > "$request_file.tmp" && mv "$request_file.tmp" "$request_file"
+
+    echo "=== Approved: $request_id ==="
+    echo "Approved by: $approver"
+    echo "Approval timestamp: $approval_timestamp"
+    echo ""
+    echo "To apply this change:"
+    echo "  $0 apply $request_id"
+}
+
+do_apply() {
+    local request_id="$1"
+
+    if [[ -z "$request_id" ]]; then
+        echo "ERROR: Request ID required"
+        echo "Usage: $0 apply <request_id>"
+        exit 1
+    fi
+
+    local request_file="$CONFIG_DIR/requests/$request_id.json"
+    if [[ ! -f "$request_file" ]]; then
+        echo "ERROR: Request not found: $request_id"
+        exit 1
+    fi
+
+    local status
+    status=$(jq -r '.status' "$request_file")
+    if [[ "$status" != "approved" ]]; then
+        echo "ERROR: Request not approved. Status: $status"
+        echo "Only approved requests can be applied."
+        exit 1
+    fi
+
+    echo "=== Applying Change: $request_id ==="
+
+    # Step 1: Create backup
+    echo "[1/5] Creating backup..."
+    $BACKUP_SCRIPT
+
+    # Step 2: Unlock config
+    echo "[2/5] Unlocking config..."
+    $LOCK_SCRIPT unlock
+
+    # Step 3: Validate before changes
+    echo "[3/5] Pre-change validation..."
+    if ! $VALIDATE_SCRIPT; then
+        echo "ERROR: Pre-validation failed. Re-locking config."
+        $LOCK_SCRIPT lock
+        exit 1
+    fi
+
+    # Step 4: User makes their changes now
+    echo "[4/5] Config unlocked for modification"
+    echo "Make your changes to: $CONFIG_FILE"
+    echo "When done, run: $0 validate-and-lock"
+    echo ""
+    echo "OR run this to edit in place:"
+    echo "  nano $CONFIG_FILE"
+}
+
+do_validate_and_lock() {
+    echo "[5/5] Post-change validation..."
+
+    if ! $VALIDATE_SCRIPT; then
+        echo "ERROR: Post-validation FAILED"
+        echo "Config changes are invalid. Fix errors before continuing."
+        echo ""
+        echo "To rollback: cp /home/desktopuser/.openclaw/openclaw-backup.*.json /home/desktopuser/.openclaw/openclaw.json"
+        exit 1
+    fi
+
+    # Sync to root
+    echo "Syncing to root config..."
+    cp "$CONFIG_FILE" "$ROOT_CONFIG_FILE"
+
+    # Lock it back down
+    echo "Re-locking config..."
+    $LOCK_SCRIPT lock
+
+    echo ""
+    echo "SUCCESS: Change applied and config locked"
+}
+
+do_status() {
+    echo "=== OpenCLAW Config Governance Status ==="
+    echo ""
+    echo "Config file: $CONFIG_FILE"
+    $LOCK_SCRIPT status
+    echo ""
+    echo "Pending/approved requests:"
+    if [[ -d "$CONFIG_DIR/requests" ]]; then
+        for req in "$CONFIG_DIR/requests"/*.json; do
+            [[ -f "$req" ]] || continue
+            local req_id status description approved_by
+            req_id=$(jq -r '.request_id' "$req")
+            status=$(jq -r '.status' "$req")
+            description=$(jq -r '.description' "$req")
+            approved_by=$(jq -r '.approved_by // "N/A"' "$req")
+            echo "  $req_id: $status"
+            echo "    Description: $description"
+            if [[ "$approved_by" != "N/A" ]]; then
+                echo "    Approved by: $approved_by"
+            fi
+        done
+    else
+        echo "  (no requests)"
+    fi
+    echo ""
+    echo "Recent backups:"
+    ls -1t /home/desktopuser/.openclaw/openclaw-backup.*.json 2>/dev/null | head -5 || echo "  (none)"
+}
+
+# Main
+case "${1:-status}" in
+    request) shift; do_request "$@" ;;
+    approve) shift; do_approve "$@" ;;
+    apply) shift; do_apply "$@" ;;
+    validate-and-lock) do_validate_and_lock ;;
+    status) do_status ;;
+    *) show_usage ;;
+esac
+EOF
+
+    chmod +x "$change_request_script"
+    log_info "OpenCLAW change request governance script created at $change_request_script"
+}
+
 # Setup OpenCLAW configuration
 # CRITICAL: Must use TARGET_USER's home, not $HOME, because this runs as root
 setup_openclaw_config() {
@@ -426,4 +663,4 @@ EOF
 }
 
 # Export functions for use in main script
-export -f install_openclaw setup_openclaw_wrapper setup_openclaw_config setup_openclaw_lock_config setup_openclaw_validate_config setup_openclaw_backup_config cleanup_openclaw_npm get_latest_openclaw_version
+export -f install_openclaw setup_openclaw_wrapper setup_openclaw_config setup_openclaw_lock_config setup_openclaw_validate_config setup_openclaw_backup_config setup_openclaw_change_request cleanup_openclaw_npm get_latest_openclaw_version
