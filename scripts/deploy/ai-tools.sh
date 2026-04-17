@@ -251,8 +251,8 @@ fi
 
 # Check required sections exist
 echo "[2/7] Checking required sections..."
-for section in "meta" "models" "channels" "bindings"; do
-    if ! jq -e "has(\"$section\")" "$CONFIG_FILE" >/dev/null 2>&1; then
+for section in meta models channels bindings; do
+    if ! jq -e ".$section" "$CONFIG_FILE" >/dev/null 2>&1; then
         echo "ERROR: Missing required section: $section"
         ERRORS=$((ERRORS + 1))
     else
