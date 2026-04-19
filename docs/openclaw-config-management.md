@@ -170,6 +170,67 @@ Example skill structure:
 /home/desktopuser/.openclaw/skills/openclaw-usage/SKILL.md
 ```
 
+## Current Configuration (2026-04-19)
+
+### Models
+
+Three models configured via OpenRouter:
+
+| Model ID | Name | Type | Context | Alias |
+|----------|------|------|---------|-------|
+| `openrouter/minimax/MiniMax-M2.7` | MiniMax-M2.7 | Reasoning | 100K | `coder` |
+| `openrouter/anthropic/claude-haiku-4-5` | Claude Haiku | Fast | 200K | `poet` |
+| `openrouter/anthropic/claude-sonnet-4-5` | Claude Sonnet | Balanced | 200K | `burns` |
+
+**Default:** MiniMax-M2.7
+
+**Aliases location:** `agents.defaults.models` (not in model definition - schema doesn't support it there)
+
+### Agents
+
+12 agents configured, one per Discord channel. Channel IDs stored in private config only.
+
+| Agent | Model |
+|-------|-------|
+| linux-desktop-seed | MiniMax |
+| research-orchestrator | MiniMax |
+| intelligent-feed | MiniMax |
+| dev-nexus-action-agent | MiniMax |
+| rag-research-tool | MiniMax |
+| dynamic-worlock | MiniMax |
+| dev-nexus-frontend | MiniMax |
+| globalbitings | MiniMax |
+| elastica | MiniMax |
+| dev-nexus | MiniMax |
+| bond-nexus | MiniMax |
+| resume-customizer | MiniMax |
+
+### Discord
+
+- **Bot:** `@coder` (user ID: 1494956104340476077)
+- **Token:** `MTQ5NDk1NjEwNDM0MDQ3NjA3Nw...`
+- **requireMention:** false (auto-respond to all messages)
+- **Allow from:** user:1162240440322502656
+
+### Config File Location
+
+```
+/home/desktopuser/.openclaw/openclaw.json
+```
+
+### Starting/Restarting Gateway
+
+```bash
+# Kill existing
+pkill -f openclaw-gateway || true
+
+# Start as desktopuser
+HOME=/home/desktopuser sudo -u desktopuser nohup /home/desktopuser/.npm-global/bin/openclaw gateway run > /tmp/openclaw.log 2>&1 &
+
+# Check logs
+tail -50 /tmp/openclaw.log
+```
+
 ## Previous Incidents
 
 | Date | Issue | Root Cause | Fix |
@@ -177,7 +238,8 @@ Example skill structure:
 | 2026-04-15 | Gateway failed to start | Config corrupted by `openclaw doctor --fix` | Restored from backup |
 | 2026-04-17 | Discord 401 errors | Missing API key after config restore | Added systemd override |
 | 2026-04-17 | Gateway running as root | Dual config causing confusion | Migrated to single-user (desktopuser) setup |
+| 2026-04-19 | Model alias validation failed | `alias` field in models array | Moved aliases to `agents.defaults.models` |
 
 ---
 
-**Last Updated:** 2026-04-17
+**Last Updated:** 2026-04-19

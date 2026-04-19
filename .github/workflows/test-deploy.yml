@@ -1,14 +1,15 @@
 name: Test Deployment
 
 on:
-  # Run manually from GitHub UI
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
     inputs:
       test_vm_ip:
         description: 'Test VM IP Address'
         required: true
-
-  # Run on schedule (weekly)
   schedule:
     - cron: '0 0 * * 0'  # Weekly on Sunday at midnight
 
