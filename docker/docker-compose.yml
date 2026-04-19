@@ -3,8 +3,8 @@ version: "3.8"
 services:
   openclaw:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: openclaw
     restart: unless-stopped
 

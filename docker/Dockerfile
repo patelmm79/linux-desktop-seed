@@ -40,7 +40,7 @@ COPY --chown=openclaw:openclaw config/openclaw-defaults.json /defaults/openclaw-
 COPY --chown=openclaw:openclaw config/mental-seal-prompt.txt /defaults/mental-seal-prompt.txt
 
 # Create entrypoint script
-COPY --chown=openclaw:openclaw docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY --chown=openclaw:openclaw docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Expose port (local-only binding)
